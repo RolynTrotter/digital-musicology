@@ -1,0 +1,31 @@
+{
+  "description": "Dominus clausulae: CANDR runs (F = I-Fl Plut. 29.1, W1 = D-W Cod. Guelf. 628 Helmst.) and the edition-based encodings they were checked against (Alex Bean's corpus, from Baltzer's edition and others).",
+  "runs": {
+    "F":     {"settings": [865, 866, 867, 868, 869, 870, 871, 872, 873, 874], "incipit": "DCCACDCBCDAFA"},
+    "W1-49": {"settings": [776, 775, 774, 773, 772], "incipit": "DCCACDCBCDAFA"},
+    "W1-55": {"settings": [743, 742, 741, 740], "incipit": "DCCACDCBCDAFA"}
+  },
+  "pieces": {
+    "2":  {"edition": "Dominus2.xml",  "run": "F"},
+    "3":  {"edition": "Dominus3.xml",  "run": "F"},
+    "4":  {"edition": "Dominus4.xml",  "run": "F"},
+    "5":  {"edition": "Dominus5.xml",  "run": "W1-49"},
+    "6":  {"edition": "Dominus6.xml",  "run": "F"},
+    "7":  {"edition": "Dominus7.xml",  "run": "F"},
+    "8":  {"edition": "Dominus8.xml",  "run": "F"},
+    "9a": {"edition": "Dominus9a.xml", "run": "W1-55"},
+    "9b": {"edition": "Dominus9b.xml", "run": "F"},
+    "10": {"edition": "Dominus10.xml", "run": "W1-55"},
+    "11": {"edition": "Dominus11.xml", "run": "F"},
+    "12": {"edition": "Dominus12.xml", "run": "F"},
+    "13": {"edition": "Dominus13.xml", "run": "F"},
+    "14": {"edition": "Dominus14.xml", "run": "F"}
+  },
+  "groups": [["2", "3"], ["4"], ["5"], ["6"], ["7"], ["8"], ["9a", "11"], ["9b"], ["10"], ["12"], ["13"], ["14"]],
+  "exclude_from_training": ["10"],
+  "notes": {
+    "2": "a second transcription of the clausula in Dominus 3 (F 149r IV)",
+    "10": "the encoding follows F 172v, which CANDR does not have; compared with the W1 concordance, not used for training",
+    "13": "F copies Dominus 13 and 5 as one two-cursus clausula; the evaluation matches the edition against its first cursus"
+  }
+}

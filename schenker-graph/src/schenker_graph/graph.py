@@ -138,6 +138,8 @@ def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=
             txt = f"home {_pitch_label(sec['home'][:-1])}"
             if sec.get('pedal'):
                 txt += f", {sec['pedal']['position']} pedal {_pitch_label(sec['pedal']['pitch'][:-1])}"
+            if sec.get('line'):
+                txt += ', line ' + '–'.join(_pitch_label(x.split('@')[0][:-1]) for x in sec['line'])
             g.labels.append({'at': first, 'text': txt, 'place': 'below'})
 
     rv = a.get('reference_voice')

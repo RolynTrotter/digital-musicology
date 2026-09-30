@@ -106,7 +106,33 @@ def section_summary(notes, root: Group, level: int, ordo_level=1) -> list[dict]:
             above = next(v.dnum for v in notes if v.pitch == p) > notes[g.head].dnum
             pedal = {'pitch': p, 'ordo_heads': c, 'of': len(ordo_heads),
                      'position': 'upper' if above else 'lower'}
+        # a stepwise line through the ordo heads into the home note (e.g. F-E-D, a 3-line
+        # descent): the longest chain of heads, in order, each a step from the next, all in one
+        # direction, ending on the home note
+        line = []
+        hk = [k for k in ordo_heads]
+        if hk and hk[-1] == g.head:
+            best = {len(hk) - 1: [len(hk) - 1]}
+            for i in range(len(hk) - 2, -1, -1):
+                cands = []
+                for j, chain in best.items():
+                    if j <= i:
+                        continue
+                    step = notes[hk[j]].dnum - notes[hk[i]].dnum
+                    if abs(step) != 1:
+                        continue
+                    if len(chain) > 1:
+                        nxt = notes[hk[chain[1]]].dnum - notes[hk[j]].dnum
+                        if nxt != step:
+                            continue
+                    cands.append([i] + chain)
+                if cands:
+                    best[i] = max(cands, key=len)
+            longest = max(best.values(), key=len)
+            if len(longest) >= 3:
+                line = [f'{notes[hk[i]].pitch}@m{notes[hk[i]].measure}' for i in longest]
         out.append({'measures': [notes[g.first].measure, notes[g.last].measure],
+                    'line': line,
                     'home': home, 'home_measure': notes[g.head].measure,
                     'ordo_head_line': [f'{notes[k].pitch}@m{notes[k].measure}' for k in ordo_heads],
                     'member_heads': [f'{notes[c.head].pitch}@m{notes[c.head].measure}' for c in g.children],

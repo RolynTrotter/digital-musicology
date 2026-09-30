@@ -139,3 +139,28 @@ def test_tree_reduction_score(tmp_path):
     a = mr.analyze(path)
     red = reduction_score(path, a, levels=('fundamental', 'ordo'))
     assert len(red.parts) == 4
+
+
+def test_unit_period_uses_tenor():
+    from melodic_reduction.grouping import unit_period
+    # duplum ordines of 8 and 4 bars over a tenor whose ordines are 4 bars: the unit is the tenor's
+    d = ([('D4', 1.5)] * 7 + [('r', 1.5)] + [('E4', 1.5)] * 3 + [('r', 1.5)]) * 3
+    t = ([('D3', 1.5)] * 3 + [('r', 1.5)]) * 9
+    s = make_score(d, t)
+    assert unit_period(load_voice(s, 0, 1), load_voice(s, 1, 0)) == 6.0
+    # a duplum whose ordines are all 8 bars doubles the unit
+    d2 = ([('D4', 1.5)] * 7 + [('r', 1.5)]) * 4
+    s2 = make_score(d2, t[:32])
+    assert unit_period(load_voice(s2, 0, 1), load_voice(s2, 1, 0)) == 12.0
+
+
+def test_stepwise_line_into_home(tmp_path):
+    # ordo heads F E F D in one pair of pairs -> a stepwise line F-E-D into the home D
+    o = lambda p: [(p, 1.5), (p, 1.5), (p, 1.5), ('r', 1.5)]
+    d = o('F4') + o('C4') + o('F4') + o('D4') + o('F4') + o('E4') + o('F4') + o('D4')
+    t = ([('D3', 3.0), ('D3', 1.5), ('r', 1.5)]) * 8
+    path = tmp_path / 'line.musicxml'
+    make_score(d, t).write('musicxml', fp=str(path))
+    a = mr.analyze(path)
+    lines = [sec['line'] for sec in a['sections'] if sec['line']]
+    assert len(a['sections']) == 2 and len(lines) == 1 and [x.split('@')[0] for x in lines[0]] == ['F4', 'E4', 'D4']

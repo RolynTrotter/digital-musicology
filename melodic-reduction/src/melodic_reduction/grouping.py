@@ -69,6 +69,31 @@ def ordo_period(notes: list[VNote]) -> float | None:
     return Counter(d).most_common(1)[0][0]
 
 
+def ordo_spans(notes: list[VNote]) -> Counter:
+    """How far apart successive rest-groups start (the last one runs to the voice's end)."""
+    starts = [v.onset for v in notes if v.after_rest]
+    ends = starts[1:] + [notes[-1].end]
+    return Counter(round(b - a, 4) for a, b in zip(starts, ends))
+
+
+def unit_period(notes: list[VNote], ref_notes: list[VNote] | None = None, min_share=0.2) -> float | None:
+    """The time unit for grouping: the shortest common ordo length (>= ``min_share`` of the
+    ordines) of the other voice (the tenor) when there is one, doubled until it is at least the
+    shortest common ordo length of this voice. A tenor pattern is the steadiest clock in a clausula; the doubling keeps
+    a fast first-mode tenor from cutting the duplum into scraps."""
+    def shortest_common(spans):
+        total = sum(spans.values())
+        common = [L for L, c in spans.items() if c / total >= min_share] or list(spans)
+        return min(common) if common else None
+
+    floor = shortest_common(ordo_spans(notes))
+    P = shortest_common(ordo_spans(ref_notes)) if ref_notes else floor
+    if P and floor:
+        while P < floor - 1e-6:
+            P *= 2
+    return P
+
+
 def ordines(notes: list[VNote], period: float | None = 'auto', split_long=True) -> list[tuple[int, int]]:
     """(first, last) note indices of each ordo."""
     groups: list[list[int]] = []
@@ -246,6 +271,7 @@ def group_level(notes, units: list[Group], level: int, w: dict, ref_notes=None) 
 
 
 def build_hierarchy(notes, ordo_spans, lig_spans=None, w=None, max_levels=8, ref_notes=None) -> Group:
+    ordo_spans = list(ordo_spans)
     """Groups from ligatures (optional) and ordines up to one group for the whole voice."""
     w = w or {}
     units = []

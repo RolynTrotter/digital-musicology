@@ -44,13 +44,14 @@ repository can't be reached, ask for the folder. Don't rewrite the package from 
    ```
    Under a second per clausula.
 3. **Read the result.**
-   - `groups`: the formal tree. Levels: `ordo` (between rests; an ordo that runs through a rest in
-     the other voice is cut on the voice's ordo period), `pair` (of ordines), `pair of pairs`,
-     `section`, … `piece`. Each group has a `head`; pairs have a module `label`.
+   - `groups`: the formal tree. Levels: `ordo`, `pair` (of ordines), `pair of pairs`, `section`,
+     … `piece`. The unit is the tenor's ordo length (see below); a duplum ordo that runs through
+     the tenor's rest is cut there and re-paired. Each group has a `head`; pairs have a `label`.
    - `sections` (one per pair of pairs): `home` note (the group's head, usually its last note),
      the line of ordo heads, and the `pedal`: the pitch that recurs most among the ordo heads
-     other than the home note, with `position` upper/lower. In Dom 3 this gives home D with an
-     upper pedal F (mm. 1–31), and F–E–(F)–D ordo heads in mm. 57–71.
+     other than the home note, with `position` upper/lower; and the `line`: a stepwise chain of
+     ordo heads into the home note (F–E–D in Dom 3 mm. 57–72). In Dom 3 this gives home D with an
+     upper pedal F in mm. 1–32, as Alex hears it.
    - `fundamental`: heads of each pair of pairs plus the first note. `fundamental='level:2'`
      (pair heads) gives a more detailed line.
    - `levels`: nested reductions `surface`, `ordo`, `pair`, `pair of pairs` … as note lists.
@@ -73,6 +74,8 @@ repository can't be reached, ask for the folder. Don't rewrite the package from 
 
 ## How the reducer decides
 
+- **The unit** is the tenor's shortest common ordo length, doubled until it reaches the duplum's
+  shortest common ordo length. 13 of 16 Dominus clausulae then fall into pairs of pairs of 16 bars.
 - **Grouping first.** Ordines are grouped in twos (pairs, then pairs of pairs …) by a dynamic
   programme that prefers two members, allows three (Dom 3 mm. 33–56 has an extra pair) and a lone
   tag at the end, and rewards groups that end on a perfect consonance with the tenor, members of
@@ -95,10 +98,12 @@ repository can't be reached, ask for the folder. Don't rewrite the package from 
 
 ## Calibration and checks
 
-- The grouping weights (notably `grouping.cadence_high` = 1.5) were set so Dom 3 comes out as
-  Alex hears it (pairs of pairs 1–16, 17–32, 33–56, 57–72, 73–88, tag). They are not yet checked
-  on the other clausulae; several (Dom 4, 5, 9a, 12, 14) get pairs of pairs of odd sizes. Look at the
-  grouping before quoting results for a new piece and say when it looks wrong.
+- `grouping.cadence_high` = 1.5 was set on Dom 3 (it is what finds the extra pair in mm. 33–56),
+  so Dom 3 is not an independent test. With the tenor unit, the corpus groups regularly except
+  Dom 1 (organum pages), Dom 5 and 12 (irregular ordo lengths). Look at the grouping before
+  quoting results and say when it looks wrong; Alex's own readings are the check.
+- Known disagreement with Alex (Dom 3 mm. 33–56): he marks F home; the tool gives C (the arrival,
+  m. 55) with F as pedal on 4 of 6 ordo heads. Report both when a pedal heads most of the ordines.
 - Other checks: run with and without `ligatures`; compare edition and CANDR readings; look at the
   graph before quoting a line.
 - The flat reducer (`method='mop'`) and its GTTM benchmark are still there; rules.md §5–6.

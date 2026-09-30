@@ -126,9 +126,14 @@ the start, no foreground reduction was visible, and the choices ignored the form
 sounds in pairs of ordines (given by the rhythmic mode), the last pitch of each pair of pairs
 (bar 15 of 16) sounds like a home note, and form and structure should inform each other.
 
-**Ordines.** Notes between rests. When a rest-group is longer than 1.25 × the voice's usual ordo
-period (the most common distance between ordo starts), it is cut on that period's grid: editions
-join ordines where one voice runs through the other's rest (Dom 3 mm. 37–43, 45–51, 77–87).
+**Ordines and the unit.** Notes between rests. The grouping unit is the tenor's shortest common
+ordo length (the tenor pattern is the steadiest clock), doubled until it is at least the
+duplum's shortest common ordo length. A duplum rest-group longer than 1.25 units is cut on that
+grid: the duplum often runs through the tenor's rest (Dom 3 mm. 37–43, 45–51, 77–87; Dom 4 and 6
+throughout), and the pair level puts the halves back together. With the duplum's own period as
+the unit (the first version), Dom 4, 5, 12, 14 and 15 got lopsided groups; with the tenor's, 13 of
+the 16 pieces fall into pairs of pairs of four units (16 bars at the usual 3/8), and the rest are
+Dom 1 (from organum pages, irregular), Dom 5 and 12 (irregular ordo lengths).
 
 **Grouping** (`grouping` weights), for each level above the ordo, by dynamic programming:
 
@@ -150,9 +155,11 @@ triangulated with the §2–3 rules inside a virtual frame, so no ordo's reducti
 next. Each group's last member gets `tree.cadence` (1.5), its first `tree.initial` (0.3); the
 piece's first and last notes get `tree.piece_edge` (2) at the top only. The root is the head.
 
-**Home and pedal.** For each pair of pairs: the home note is its head; the pedal is the pitch that
-recurs most among its ordo heads other than the home pitch (at least twice), marked upper or
-lower.
+**Home, pedal, line.** For each pair of pairs: the home note is its head; the pedal is the pitch
+that recurs most among its ordo heads other than the home pitch (at least twice), marked upper or
+lower; the line is the longest chain of ordo heads, in order, moving by step in one direction into
+the home note (three notes or more). Dom 3 has one, F–E–D in mm. 57–72; across the corpus there
+are five (Dom 3, 6, 8, 9b, 10).
 
 **Tenor.** Reduced the same way against the duplum; its ordines are placed in the duplum's pairs
 (an ordo belongs to the pair in which it ends) and the tree is built on those groups.
@@ -164,14 +171,17 @@ the ordo. Off by default: ligature brackets are notation, not a reduction.
 hears them (1–16, 17–32, 33–56 with the extra pair, 57–72, 73–88, tag); at 1.2 or lower the extra
 pair is missed. It has not been checked on the other clausulae.
 
-**Dominus 3 (Alex's encoding) with the defaults:**
+**Dominus 3 (Alex's encoding) with the defaults.** Alex's own reading, for comparison: D home
+through m. 32 with F as a structural upper pedal; mm. 33–56 irregular, F marked as home; a 3-line
+descent in mm. 57–72; the piece ends on E over A, off the home note. The tool agrees except in
+mm. 33–56, where it hears C (m. 55) as the arrival and F only as the pedal (4 of 6 ordo heads).
 
 | Pair of pairs | Pairs (labels) | Ordo heads | Home | Pedal |
 | --- | --- | --- | --- | --- |
 | mm. 1–16 | a, a′ | F C F D | D (m. 15) | upper F |
 | 17–32 | a″, a‴ | F B♭ F D | D (m. 31) | upper F |
 | 33–56 | b, b′, a⁗ | F D F F F C | C (m. 55) | upper F |
-| 57–72 | a′, a′ | F E F D | D (m. 71) | upper F |
+| 57–72 | a′, a′ | F E F D (line F–E–D) | D (m. 71) | upper F |
 | 73–88 | c, d | C D D C | C (m. 87) | upper D |
 | 89–92 (tag) | e | E | E (m. 92) | |
 

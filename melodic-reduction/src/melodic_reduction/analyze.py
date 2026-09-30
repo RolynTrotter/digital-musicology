@@ -222,7 +222,7 @@ def _voice_tree(s, part, reference, w, unit, ligs, master=None):
     for f in feats:
         f.pop('piece_edge', None)          # applied only at the top of the tree (tree.py)
     sal = F.salience(feats, w)
-    ords = G.ordines(notes)
+    ords = G.ordines(notes, G.unit_period(notes, ref_notes))
     lig_spans = G.ligatures(s.parts[part], notes) if ligs else None
     if master is None:
         root = G.build_hierarchy(notes, ords, lig_spans, w.get('grouping', {}), ref_notes=ref_notes)
@@ -366,6 +366,8 @@ def summary_tree(a: dict) -> str:
     for sec in a['sections']:
         ped = sec['pedal']
         ped_s = f"; {ped['position']} pedal {ped['pitch']} ({ped['ordo_heads']} of {ped['of']} ordo heads)" if ped else ''
+        if sec.get('line'):
+            ped_s += f"; {len(sec['line'])}-note stepwise line " + '-'.join(x.split('@')[0] for x in sec['line'])
         lines.append(f"m{sec['measures'][0]}-{sec['measures'][1]}: home {sec['home']}; ordo heads "
                      + ' '.join(sec['ordo_head_line']) + ped_s)
     if 'reference_voice' in a:

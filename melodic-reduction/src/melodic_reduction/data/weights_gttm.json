@@ -1,0 +1,43 @@
+{
+  "_comment": "Generic salience and subordination weights fitted by coordinate ascent (melodic_reduction.fit) to the GTTM database time-span trees, training on every other melody in folder order; held-out tree agreement 0.698 -> 0.760 (135 melodies). Relation and consonance weights are the rule defaults. Tonal repertoire: use as a sensitivity check.",
+  "salience": {
+    "metric": 4.0,
+    "duration": 0.5,
+    "group_start": -0.6,
+    "group_end": 2.0,
+    "piece_edge": 8.0,
+    "ref_onset": 0.5,
+    "cons_perfect": 1.0,
+    "cons_medial": 0.8,
+    "cons_imperfect": 0.3,
+    "cons_imp_diss": -0.5,
+    "cons_int_diss": -0.7,
+    "cons_perf_diss": -1.0,
+    "extreme": 0.05
+  },
+  "relation": {
+    "REP": 2.0,
+    "NEI": 1.5,
+    "PASS": 1.5,
+    "FILL": 0.5,
+    "NEI_LEAP": 0.3,
+    "INC_R": 0.5,
+    "INC_L": 0.2,
+    "OTHER": -1.0,
+    "EDGE_REP": 1.0,
+    "EDGE_STEP": 0.5,
+    "EDGE_LEAP": 0.0,
+    "ROOT": 0.0
+  },
+  "triangle": {
+    "sub_min": 4.5,
+    "sub_max": 1.0,
+    "leap": 0.2,
+    "same_pitch_edge": 0.0,
+    "same_pitch_span": 0.0,
+    "root_sal": 1.0,
+    "edge_sal": 0.5
+  },
+  "parallel_alpha": 0.5,
+  "module_min_notes": 5
+}

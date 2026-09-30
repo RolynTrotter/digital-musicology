@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "melodic-reduction"
+version = "0.1.0"
+description = "Tonality-free melodic reduction: prolongational hierarchy, foreground reduction and focal pitches, built on music21"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.22", "music21>=9"]
+authors = [{name = "Alex Bean"}]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+melodic-reduction = "melodic_reduction.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+melodic_reduction = ["data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

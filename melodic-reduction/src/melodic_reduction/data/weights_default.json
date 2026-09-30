@@ -1,0 +1,43 @@
+{
+  "_comment": "Hand-set defaults from the rules in rules.md (GTTM time-span preference rules, MOP prolongation types, Garlandian consonance, Bean 2020's clausula rules). Not fitted to any data. same_pitch_edge (a prior in favour of focal pitches) is 0, so focal pitches are found, not assumed; on the ten F Dominus clausulae setting it to 0.5 changes nothing.",
+  "salience": {
+    "metric": 1.0,
+    "duration": 1.0,
+    "group_start": 0.4,
+    "group_end": 1.0,
+    "piece_edge": 2.0,
+    "ref_onset": 0.5,
+    "cons_perfect": 1.0,
+    "cons_medial": 0.8,
+    "cons_imperfect": 0.3,
+    "cons_imp_diss": -0.5,
+    "cons_int_diss": -0.7,
+    "cons_perf_diss": -1.0,
+    "extreme": 0.2
+  },
+  "relation": {
+    "REP": 2.0,
+    "NEI": 1.5,
+    "PASS": 1.5,
+    "FILL": 0.5,
+    "NEI_LEAP": 0.3,
+    "INC_R": 0.5,
+    "INC_L": 0.2,
+    "OTHER": -1.0,
+    "EDGE_REP": 1.0,
+    "EDGE_STEP": 0.5,
+    "EDGE_LEAP": 0.0,
+    "ROOT": 0.0
+  },
+  "triangle": {
+    "sub_min": 2.0,
+    "sub_max": 0.5,
+    "leap": -0.3,
+    "same_pitch_edge": 0.0,
+    "same_pitch_span": 0.0,
+    "root_sal": 1.0,
+    "edge_sal": 0.5
+  },
+  "parallel_alpha": 0.5,
+  "module_min_notes": 5
+}

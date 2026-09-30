@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "schenker-graph"
+version = "0.1.0"
+description = "Engrave Schenkerian graphs: the original score with a beamed fundamental line, prolongation slurs and labels (verovio)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["verovio>=4", "lxml", "cairosvg", "pypdf"]
+authors = [{name = "Alex Bean"}]
+
+[project.optional-dependencies]
+analysis = ["melodic-reduction"]
+test = ["pytest>=7"]
+
+[project.scripts]
+schenker-graph = "schenker_graph.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

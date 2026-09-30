@@ -1,7 +1,7 @@
 """schenker-graph command line.
 
     schenker-graph SCORE [--analysis a.json] [--graph spec.json] [--out out/name]
-                   [--part 0] [--stacked fundamental span:4] [--middleground auto|span:T|none]
+                   [--part 0] [--stacked fundamental ordo] [--middleground auto|span:T|none]
                    [--modules 4] [--no-focal] [--no-slurs] [--formats svg png pdf]
 """
 from __future__ import annotations
@@ -20,13 +20,17 @@ def main(argv=None):
     ap.add_argument('--out', default='graph')
     ap.add_argument('--part', type=int, default=0)
     ap.add_argument('--stacked', nargs='*', default=None,
-                    help="add reduction staves above the score, e.g. --stacked fundamental span:4")
+                    help="add reduction staves above the score, e.g. --stacked fundamental ordo")
     ap.add_argument('--middleground', default='auto')
     ap.add_argument('--modules', type=int, default=4)
     ap.add_argument('--module-brackets', action='store_true', help='bracket whole module occurrences')
     ap.add_argument('--no-focal', action='store_true')
     ap.add_argument('--no-slurs', action='store_true')
     ap.add_argument('--formats', nargs='+', default=['svg', 'png', 'pdf'])
+    ap.add_argument('--method', default='tree', choices=['tree', 'mop'], help='analysis method when analysing on the fly')
+    ap.add_argument('--ligatures', action='store_true', help='tree: reduce ligatures first (brackets in the MusicXML)')
+    ap.add_argument('--upper-slurs-only', action='store_true', help='tree: no slurs inside ordines')
+    ap.add_argument('--no-reference', action='store_true', help='tree: do not mark the tenor')
     ap.add_argument('--title', default=None)
     args = ap.parse_args(argv)
 
@@ -37,11 +41,19 @@ def main(argv=None):
     mg = None if args.middleground in ('none', 'None') else args.middleground
     stacked = tuple(args.stacked) if args.stacked else None
     if args.stacked is not None and not args.stacked:
-        stacked = ('fundamental', 'span:4')
-    files, g, a = schenker_graph(args.score, analysis=args.analysis, graph=graph, out_prefix=args.out,
+        stacked = ('fundamental', 'ordo')
+    analysis = json.load(open(args.analysis)) if args.analysis else None
+    if analysis is None:
+        import melodic_reduction as mr
+        analysis = mr.analyze(args.score, part=args.part, method=args.method,
+                              **({'ligatures': args.ligatures} if args.method == 'tree' else {}))
+    slurs = False if args.no_slurs else ('upper' if args.upper_slurs_only else 'all')
+    if analysis.get('method') != 'tree':
+        slurs = not args.no_slurs
+    files, g, a = schenker_graph(args.score, analysis=analysis, graph=graph, out_prefix=args.out,
                                  part=args.part, stacked=stacked, middleground=mg, modules=args.modules,
                                  module_brackets=args.module_brackets, focal=not args.no_focal,
-                                 slurs=not args.no_slurs, formats=tuple(args.formats))
+                                 slurs=slurs, reference=not args.no_reference, formats=tuple(args.formats))
     fl = ' '.join(a['notes'][i]['pitch'] for i in g.fundamental)
     print(f'fundamental line: {fl}')
     for f in files:

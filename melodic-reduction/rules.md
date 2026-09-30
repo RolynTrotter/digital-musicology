@@ -1,5 +1,10 @@
 # Reduction rules
 
+There are two reducers. The default (`method='tree'`, §7) groups the voice first (ordines,
+pairs, pairs of pairs …) and reduces each group from the foreground up. The flat reducer
+(`method='mop'`, §1–6) triangulates the whole voice at once. Both use the same note salience
+(§1) and the same prolongation rules (§2).
+
 The reducer is rule-based. Every weight in `data/weights_default.json` stands for one of the rules
 below, taken from the published literature on melodic reduction and from Alex Bean's own clausula
 rules (2020). Nothing tonal is used: no key, no scale degrees, no harmonic function, no
@@ -113,6 +118,66 @@ scores, not the edition.
 The long prolongations (F in F_00, F_05 C, F_06 F, F_07 C from m. 59, F_08 C) survive every weight
 set; F_01, F_03 and the openings of several pieces depend on the weights and should be argued from
 the score, not from the tool.
+
+## 7. The grouped tree (default)
+
+Written after Alex's critique of the flat reducer on Dominus 3: structural notes clustered at
+the start, no foreground reduction was visible, and the choices ignored the form. The piece
+sounds in pairs of ordines (given by the rhythmic mode), the last pitch of each pair of pairs
+(bar 15 of 16) sounds like a home note, and form and structure should inform each other.
+
+**Ordines.** Notes between rests. When a rest-group is longer than 1.25 × the voice's usual ordo
+period (the most common distance between ordo starts), it is cut on that period's grid: editions
+join ordines where one voice runs through the other's rest (Dom 3 mm. 37–43, 45–51, 77–87).
+
+**Grouping** (`grouping` weights), for each level above the ordo, by dynamic programming:
+
+| Weight | Rule |
+| --- | --- |
+| `size3`, `size1`, `tag` | groups of two preferred; three cost 1.2; one costs 2, except a tag at the end (0.3) |
+| `unequal` | members of unequal length cost (standard deviation of their lengths) |
+| `cadence`, `cadence_high` | reward for a group ending on a perfect (1) or medial (0.6) consonance with the other voice; `cadence_high` above the pair level |
+| `parallel`, `parallel_pairs` | reward for members resembling each other (a + a′); weaker for pairs of ordines, whose two ordines usually differ |
+| `repeat` | reward for a group that recurs elsewhere in the same phase (a pair that comes back as a pair) |
+
+Similarity is a global alignment of the two note sequences (pitch by letter and duration; a step
+off or a different duration counts half; transposition up to two steps at a small cost), with the
+other voice's rhythm over the same stretch counting 30%: the tenor's alternation of ordo patterns
+is what fixes the phase of the pairs.
+
+**Tree.** Inside each group, the members (notes of an ordo, or the heads of the subgroups) are
+triangulated with the §2–3 rules inside a virtual frame, so no ordo's reduction reaches into the
+next. Each group's last member gets `tree.cadence` (1.5), its first `tree.initial` (0.3); the
+piece's first and last notes get `tree.piece_edge` (2) at the top only. The root is the head.
+
+**Home and pedal.** For each pair of pairs: the home note is its head; the pedal is the pitch that
+recurs most among its ordo heads other than the home pitch (at least twice), marked upper or
+lower.
+
+**Tenor.** Reduced the same way against the duplum; its ordines are placed in the duplum's pairs
+(an ordo belongs to the pair in which it ends) and the tree is built on those groups.
+
+**Ligatures** (`ligatures=True`): each ligature is reduced first and its head represents it in
+the ordo. Off by default: ligature brackets are notation, not a reduction.
+
+**Calibration.** `cadence_high` = 1.5 is the value at which Dom 3's pairs of pairs come out as Alex
+hears them (1–16, 17–32, 33–56 with the extra pair, 57–72, 73–88, tag); at 1.2 or lower the extra
+pair is missed. It has not been checked on the other clausulae.
+
+**Dominus 3 (Alex's encoding) with the defaults:**
+
+| Pair of pairs | Pairs (labels) | Ordo heads | Home | Pedal |
+| --- | --- | --- | --- | --- |
+| mm. 1–16 | a, a′ | F C F D | D (m. 15) | upper F |
+| 17–32 | a″, a‴ | F B♭ F D | D (m. 31) | upper F |
+| 33–56 | b, b′, a⁗ | F D F F F C | C (m. 55) | upper F |
+| 57–72 | a′, a′ | F E F D | D (m. 71) | upper F |
+| 73–88 | c, d | C D D C | C (m. 87) | upper D |
+| 89–92 (tag) | e | E | E (m. 92) | |
+
+Sections: 1–32 (A), 33–56 (B), 57–88, tag; piece head E (m. 92), a fifth over the tenor's A.
+The tenor's line at the pair-of-pairs level: D D D C G C A. The CANDR reading of F 149r gives the
+same upper levels, with or without ligatures.
 
 ## References
 

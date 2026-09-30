@@ -32,7 +32,7 @@ def test_overlay_graph(score_path, tmp_path):
     assert 'schenker-beam' in text
     # one stem per fundamental note
     stems = len(re.findall(r'<path d="M[\d.]+ [\d.]+ L[\d.]+ [\d.]+" stroke="#b3261e"', text))
-    assert stems == len(g.fundamental)
+    assert stems == len(g.fundamental) + sum(len(o.fundamental) for o in g.others)
     mei = [f for f in files if str(f).endswith('.mei')][0].read_text()
     assert 'slur' in mei
 
@@ -49,8 +49,14 @@ def test_hand_spec_addresses(score_path, tmp_path):
     assert 'hello' in ''.join(open(f).read() for f in files if str(f).endswith('.svg'))
 
 
+def test_mop_graph(score_path, tmp_path):
+    a = mr.analyze(score_path, method='mop')
+    files, g, _ = sg.schenker_graph(score_path, analysis=a, out_prefix=tmp_path / 'm', formats=('svg',))
+    assert g.fundamental == a['fundamental']['notes']
+
+
 def test_stacked(score_path, tmp_path):
     files, g, a = sg.schenker_graph(score_path, out_prefix=tmp_path / 's', formats=('svg',),
-                                    stacked=('fundamental', 'span:2'))
+                                    stacked=('fundamental', 'ordo'))
     assert g.staff == 3
     assert any(str(f).endswith('.svg') for f in files)

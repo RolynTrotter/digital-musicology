@@ -47,7 +47,10 @@ class Graph:
         'focal': '#6b6b6b', 'label': '#333333', 'bracket': '#555555'})
     beam_gap: float = 2.0        # staff spaces between the highest fundamental notehead and the beam
     beam_thickness: float = 0.5  # staff spaces
+    beam_direction: str = 'up'   # 'up' (beam above the staff) or 'down' (below: a lower voice)
     title: str | None = None
+    voice_pitches: list | None = None   # pitches of the analysed voice, to check the alignment
+    others: list = field(default_factory=list)   # overlays for other staves (Graphs)
 
     @classmethod
     def from_dict(cls, d):
@@ -55,14 +58,18 @@ class Graph:
         for k, v in d.items():
             if k == 'colors':
                 g.colors.update(v)
+            elif k == 'others':
+                g.others = [o if isinstance(o, Graph) else Graph.from_dict(o) for o in v]
             elif hasattr(g, k):
                 setattr(g, k, v)
         return g
 
     def to_dict(self):
-        return {k: getattr(self, k) for k in ('staff', 'fundamental', 'middleground', 'slurs',
-                                              'labels', 'brackets', 'colors', 'beam_gap',
-                                              'beam_thickness', 'title')}
+        d = {k: getattr(self, k) for k in ('staff', 'fundamental', 'middleground', 'slurs',
+                                           'labels', 'brackets', 'colors', 'beam_gap',
+                                           'beam_thickness', 'beam_direction', 'title')}
+        d['others'] = [o.to_dict() for o in self.others]
+        return d
 
 
 # ------------------------------------------------------------------ MEI note mapping
@@ -138,14 +145,15 @@ def _nid(prefix):
 
 def annotate_mei(mei_root, graph: Graph, voice_pitches):
     notes = staff_notes(mei_root, graph.staff)
-    check_alignment(notes, voice_pitches)
+    if voice_pitches:
+        check_alignment(notes, voice_pitches)
     ids = [n.get(XML_ID) for n in notes]
 
     for k in graph.middleground:
         notes[k].set('color', graph.colors['middleground'])
     for k in graph.fundamental:
         notes[k].set('color', graph.colors['fundamental'])
-        notes[k].set('stem.dir', 'up')
+        notes[k].set('stem.dir', graph.beam_direction)
 
     for s in graph.slurs:
         a, b = s['from'], s['to']
@@ -157,6 +165,8 @@ def annotate_mei(mei_root, graph: Graph, voice_pitches):
         el.set('endid', '#' + ids[b])
         el.set('staff', str(graph.staff))
         el.set('curvedir', s.get('place', 'below'))
+        if s.get('width'):
+            el.set('lwidth', str(s['width']))
         if s.get('style') == 'dashed':
             el.set('lform', 'dashed')
         el.set('color', s.get('color', graph.colors['focal' if s.get('style') == 'dashed' else 'slur']))
@@ -194,4 +204,6 @@ def annotate_mei(mei_root, graph: Graph, voice_pitches):
         for title in mei_root.iter(_q('title')):
             title.text = graph.title
             break
+    for other in graph.others:
+        annotate_mei(mei_root, other, other.voice_pitches or [])
     return ids

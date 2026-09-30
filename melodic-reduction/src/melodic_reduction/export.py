@@ -24,6 +24,9 @@ def _level_sets(analysis, levels):
         elif str(lv).startswith('span:'):
             T = float(str(lv).split(':')[1])
             out.append((f'span {T:g}', {n['idx'] for n in notes if n['span_units'] >= T}))
+        elif 'levels' in analysis and str(lv).replace('-', ' ') in analysis['levels']:
+            name = str(lv).replace('-', ' ')
+            out.append((name, set(analysis['levels'][name])))
         elif str(lv).startswith('height:'):
             H = int(str(lv).split(':')[1])
             out.append((f'height {H}', {n['idx'] for n in notes if n['height'] >= H}))
@@ -32,7 +35,7 @@ def _level_sets(analysis, levels):
     return out
 
 
-def reduction_score(score, analysis, levels=('fundamental', 'span:4')) -> stream.Score:
+def reduction_score(score, analysis, levels=('fundamental', 'ordo')) -> stream.Score:
     """The original score with one reduction staff per level above it (background first)."""
     s = copy.deepcopy(load_score(score))
     part = s.parts[analysis['part']]
@@ -50,6 +53,17 @@ def reduction_score(score, analysis, levels=('fundamental', 'span:4')) -> stream
     sr = ScoreReduction()
     sr.score = s
     red = sr.reduce()
+    # ScoreReduction stacks the staves in the order it meets the groups; put them in the order asked
+    order = [nm.replace(' ', '_') for nm, _ in _level_sets(analysis, levels)]
+    parts = list(red.parts)
+    ranked = sorted(parts, key=lambda p: order.index(p.id) if p.id in order else len(order) + parts.index(p))
+    if ranked != parts:
+        new = stream.Score()
+        if red.metadata is not None:
+            new.metadata = red.metadata
+        for p in ranked:
+            new.insert(0, p)
+        red = new
     # ScoreReduction's template parts carry copies of the original's spanners (the ligature
     # brackets); drop them from the reduction staves and name those staves after their level
     names = [nm for nm, _ in _level_sets(analysis, levels)]
@@ -65,7 +79,7 @@ def reduction_score(score, analysis, levels=('fundamental', 'span:4')) -> stream
     return red
 
 
-def write_reduction(score, analysis, path, levels=('fundamental', 'span:4')):
+def write_reduction(score, analysis, path, levels=('fundamental', 'ordo')):
     red = reduction_score(score, analysis, levels)
     red.write('musicxml', fp=str(path))
     return path

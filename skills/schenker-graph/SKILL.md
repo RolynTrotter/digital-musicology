@@ -23,13 +23,13 @@ his own reading.
 
 ## Workflow
 
-1. **Analyse or load.** `schenker-graph SCORE` analyses the duplum (part 0) on the fly;
-   `--analysis a.json` uses a saved melodic-reduction analysis, which is better when the analysis
-   has been checked or tuned.
+1. **Analyse or load.** `schenker-graph SCORE` analyses the duplum (part 0) and the tenor on the
+   fly with the tree method; `--analysis a.json` uses a saved melodic-reduction analysis, which is
+   better when the analysis has been checked or tuned.
 2. **Engrave.**
    ```bash
    schenker-graph Dominus3.xml --analysis Dominus3.json --out graphs/Dominus3
-   schenker-graph Dominus3.xml --stacked fundamental span:4 --out graphs/Dominus3_stacked
+   schenker-graph Dominus3.xml --stacked fundamental pair ordo --out graphs/Dominus3_stacked
    ```
    ```python
    import schenker_graph as sg
@@ -42,20 +42,27 @@ his own reading.
 4. **Deliver** the PDF (and PNGs if they want to paste them), and list the fundamental line and
    focal pitches in the reply with measure numbers.
 
-## What is drawn (defaults)
+## What is drawn (defaults, for a tree analysis)
 
 | Element | Meaning | Where |
 | --- | --- | --- |
-| Red noteheads, stems and beam | fundamental line | beam above the staff |
-| Blue noteheads | middleground (span ≥ ¼ of the fundamental line's threshold) | |
-| Blue slurs | a middleground note's parent interval (passing, neighbour, leap-filling) | below |
-| Grey dashed slurs | successive returns of a dominant focal pitch not already joined | below |
-| Italic label | focal pitch and number of returns, at its first note | below |
-| Bold letters (A, B (−1)…) | module occurrences, with transposition in steps | above |
+| Red noteheads, stems and beam | fundamental line: heads of each pair of pairs (duplum) | beam above the duplum |
+| Red noteheads, stems and beam | the tenor's line at the same level | beam below the tenor |
+| Blue noteheads | heads of ordines and pairs (middleground) | both voices |
+| Grey-blue slurs | the reduction inside each ordo (foreground): each note slurred to the notes it lies between or leads to | below the duplum |
+| Blue slurs | how ordo heads connect inside pairs and pairs of pairs | above the duplum, below the tenor |
+| Bold letters (a, a', b …) | pair (module) labels by duplum similarity | above |
+| Italic text | home note and pedal pitch of each pair of pairs | below the duplum |
 
-Options: `--middleground auto|span:T|none`, `--modules N` (0 = none), `--module-brackets`
-(line over the whole occurrence), `--no-focal`, `--no-slurs`, `--stacked LEVEL …` (reduction
-staves from music21's `ScoreReduction`; the top staff is beamed), `--title`.
+Options: `--upper-slurs-only` (drop the foreground slurs), `--no-slurs`, `--no-reference` (leave
+the tenor unmarked), `--ligatures` (analyse with ligatures first), `--stacked fundamental pair
+ordo` (reduction staves above the score, from music21's `ScoreReduction`, top staff beamed),
+`--title`. In Python, `graph_from_tree(a, max_slur_level=…)` sets the highest level that gets
+slurs (default: the fundamental line's level; above it the beam does the job).
+
+For a flat analysis (`method='mop'`), the older overlays apply: fundamental line, middleground by
+span, parent-interval slurs, dashed focal-pitch slurs; options `--middleground auto|span:T|none`,
+`--modules N`, `--module-brackets`, `--no-focal`.
 
 ## Hand analyses
 
@@ -84,5 +91,8 @@ reduction that melodic-reduction could later be fitted to; keep them.
   that keep their own rhythm): stems from the fundamental noteheads, one beam per system placed
   two staff spaces above the highest notehead, slur or label over the staff, carried to the system
   edge when the line continues.
+- The tenor's beam is the same drawing turned over (stems down from the left of the notehead,
+  beam below the staff and below any slurs there). Other staves' overlays live in
+  `Graph.others`.
 - If a beam collides with the system above, raise `spacingSystem` in `options`
-  (e.g. `engrave(..., options={'spacingSystem': 22})`).
+  (default 22; e.g. `engrave(..., options={'spacingSystem': 28})`).

@@ -133,7 +133,7 @@ def load_voice(score, part: int = 0, reference: int | None = None) -> list[VNote
             if ro <= v.onset + 1e-9 < ro + rd:
                 iv = v.midi - int(round(rn.pitch.ps))
                 v.ref_interval = iv
-                v.ref_class = CONSONANCE[iv % 12]
+                v.ref_class = CONSONANCE[abs(iv) % 12]   # voice crossing: the interval is the same
                 v.ref_onset = abs(ro - v.onset) < 1e-6
     return notes
 

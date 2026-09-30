@@ -9,7 +9,7 @@ pip install -e .                 # verovio, lxml, cairosvg, pypdf; melodic-reduc
 
 schenker-graph Dominus3.xml --out graphs/Dominus3                       # analyse and engrave
 schenker-graph Dominus3.xml --analysis Dominus3.json --out graphs/D3     # use a saved analysis
-schenker-graph Dominus3.xml --stacked fundamental span:4 --out graphs/D3_stacked
+schenker-graph Dominus3.xml --stacked fundamental pair ordo --out graphs/D3_stacked
 schenker-graph Dominus3.xml --graph my_reading.json --out graphs/D3_mine  # hand analysis
 ```
 

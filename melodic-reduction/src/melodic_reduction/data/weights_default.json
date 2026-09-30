@@ -39,5 +39,24 @@
     "edge_sal": 0.5
   },
   "parallel_alpha": 0.5,
-  "module_min_notes": 5
+  "module_min_notes": 5,
+  "tree": {
+    "cadence": 1.5,
+    "initial": 0.3
+  },
+  "grouping": {
+    "size1": -2.0,
+    "size3": -1.2,
+    "tag": -0.3,
+    "unequal": 0.5,
+    "cadence": 0.8,
+    "cadence_high": 1.5,
+    "parallel": 1.0,
+    "parallel_pairs": 0.3,
+    "repeat": 1.0
+  },
+  "labels": {
+    "same": 0.9,
+    "variant": 0.6
+  }
 }

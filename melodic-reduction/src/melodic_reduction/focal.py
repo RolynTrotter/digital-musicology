@@ -21,13 +21,15 @@ def hierarchy_edges(tree):
 
 
 def focal_spans(notes, tree, unit: float, min_span_units: float = 2.0, min_returns: int = 3,
-                min_density: float = 1.0, min_within_step: float = 0.4):
+                min_density: float = 1.0, min_within_step: float = 0.4, edges=None, heights=None):
     """Every same-pitch prolongation of at least ``min_span_units`` and ``min_returns`` notes.
     A prolongation counts as *focal* (heard as an elaboration of one pitch) when the pitch
     returns at least ``min_density`` times per 8 units and the voice spends at least
     ``min_within_step`` of the span on the pitch or a step from it. Sparse, long prolongations
     (a pitch that frames a whole section) are kept but marked ``focal: False``."""
-    edges = [(a, b) for a, b in hierarchy_edges(tree) if notes[a].pitch == notes[b].pitch]
+    if edges is None:
+        edges = hierarchy_edges(tree)
+    edges = [(a, b) for a, b in edges if notes[a].pitch == notes[b].pitch]
     parent = list(range(len(notes)))
 
     def find(x):
@@ -44,7 +46,10 @@ def focal_spans(notes, tree, unit: float, min_span_units: float = 2.0, min_retur
     for a, b in edges:
         members.setdefault(find(a), set()).update((a, b))
 
-    height = tree.height
+    if heights is None:
+        height = tree.height
+    else:
+        height = [0] + list(heights) + [0]
     t0, t1 = notes[0].onset, notes[-1].end
     spans = []
     for root, mem in members.items():

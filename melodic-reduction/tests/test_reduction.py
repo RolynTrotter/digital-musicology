@@ -26,7 +26,7 @@ def test_passing_note_is_subordinate():
 
 
 def test_focal_pitch_found(focal_score):
-    a = mr.analyze(focal_score)
+    a = mr.analyze(focal_score, method='mop')
     dom = a['dominant_focal_pitches']
     assert dom and dom[0]['pitch'] == 'F4'
     assert a['notes'][0]['relation'] == 'FRAME'
@@ -40,7 +40,7 @@ def test_focal_pitch_found(focal_score):
 
 
 def test_reductions_are_nested(focal_score):
-    a = mr.analyze(focal_score)
+    a = mr.analyze(focal_score, method='mop')
     prev = None
     for T in sorted(a['levels_by_span_units'], key=float, reverse=True):
         cur = set(a['levels_by_span_units'][T])
@@ -60,7 +60,7 @@ def test_modules_find_transposed_repeat():
 
 
 def test_json_roundtrip(focal_score, tmp_path):
-    a = mr.analyze(focal_score)
+    a = mr.analyze(focal_score, method='mop')
     mr.write_json(a, tmp_path / 'a.json')
     b = json.loads((tmp_path / 'a.json').read_text())
     assert len(b['notes']) == len(a['notes'])
@@ -68,8 +68,74 @@ def test_json_roundtrip(focal_score, tmp_path):
 
 def test_reduction_score(focal_score):
     from melodic_reduction.export import reduction_score
-    a = mr.analyze(focal_score)
+    a = mr.analyze(focal_score, method='mop')
     red = reduction_score(focal_score, a, levels=('fundamental', 'span:2'))
     assert len(red.parts) == 4
     top = [n for n in red.parts[0].recurse().notes]
     assert len(top) == len(a['fundamental']['notes'])
+
+
+# ------------------------------------------------------------------ grouped tree
+
+def _clausula_like(tmp_path, n_pairs=4):
+    """Duplum ordines of 3 perfections + rest, in pairs a = (D E F | E C D) ending on D;
+    a fifth-mode tenor with rests in the same places."""
+    ordo1 = [('D4', 1.5), ('E4', 1.5), ('F4', 1.5), ('r', 1.5)]
+    ordo2 = [('E4', 1.0), ('C4', 0.5), ('E4', 1.0), ('F4', 0.5), ('D4', 1.5), ('r', 1.5)]
+    t1 = [('D3', 3.0), ('C3', 1.5), ('r', 1.5)]
+    t2 = [('B2', 1.5), ('C3', 1.5), ('D3', 1.5), ('r', 1.5)]
+    d, t = [], []
+    for _ in range(n_pairs):
+        d += ordo1 + ordo2
+        t += t1 + t2
+    s = make_score(d, t)
+    path = tmp_path / 'clausula.musicxml'
+    s.write('musicxml', fp=str(path))
+    return path
+
+
+def test_ordines_split_on_period():
+    from melodic_reduction.grouping import ordines
+    seq = [('D4', 1.5), ('E4', 1.5), ('F4', 1.5), ('r', 1.5)] * 3
+    seq = seq[:8] + [('D4', 1.5), ('E4', 1.5), ('F4', 1.5), ('G4', 1.5), ('F4', 1.5), ('E4', 1.5), ('r', 1.5)]
+    notes = load_voice(make_score(seq), 0)
+    spans = ordines(notes)
+    # the last rest-group runs 6 bars without a rest: cut on the 4-bar period
+    assert [(notes[a].measure, notes[b].measure) for a, b in spans] == [(1, 3), (5, 7), (9, 12), (13, 14)]
+
+
+def test_tree_pairs_and_home_notes(tmp_path):
+    path = _clausula_like(tmp_path)
+    a = mr.analyze(path)
+    assert a['method'] == 'tree'
+    pairs = [m['measures'] for m in a['modules']]
+    assert pairs[0] == [1, 7] and pairs[1] == [9, 15]          # pairs of ordines, in phase
+    assert all(m['label'] == 'a' for m in a['modules'])         # identical pairs share a label
+    # every pair ends on D, so every pair of pairs is heard as prolonging D
+    assert all(sec['home'] == 'D4' for sec in a['sections'])
+    assert any(sec['pedal'] and sec['pedal']['pitch'] == 'F4' for sec in a['sections'])
+    # each ordo is reduced inside itself: dependencies at level 1 stay within the ordo
+    notes = a['notes']
+    for d in a['dependencies']:
+        if d['level'] == 1:
+            ends = [x for x in d['parent'] if x is not None]
+            assert all(notes[x]['measure'] // 4 == notes[d['note']]['measure'] // 4 for x in ends)
+    # the tenor is reduced too
+    rv = a['reference_voice']
+    assert rv['fundamental']['notes'] and any(n['level'] >= 1 for n in rv['notes'])
+
+
+def test_tree_levels_nested(tmp_path):
+    a = mr.analyze(_clausula_like(tmp_path))
+    names = list(a['levels'])
+    for lo, hi in zip(names, names[1:]):
+        assert set(a['levels'][hi]) <= set(a['levels'][lo])
+    assert len(a['levels']['piece']) == 1
+
+
+def test_tree_reduction_score(tmp_path):
+    from melodic_reduction.export import reduction_score
+    path = _clausula_like(tmp_path)
+    a = mr.analyze(path)
+    red = reduction_score(path, a, levels=('fundamental', 'ordo'))
+    assert len(red.parts) == 4

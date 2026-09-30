@@ -31,10 +31,19 @@ def bar_length(score) -> float:
     return float(ts.barDuration.quarterLength) if ts else 4.0
 
 
-def analyze(score, part: int = 0, reference='auto', weights='default', unit: float | None = None,
-            fundamental='auto', min_focal_units: float = 2.0, modules: bool = True,
-            frame: str = 'notes') -> dict:
-    """Reduce one voice.
+def analyze(score, part: int = 0, reference='auto', weights='default', method: str = 'tree', **kw) -> dict:
+    """Reduce one voice. ``method='tree'`` (default) reduces group by group from the ordo up
+    (see analyze_tree); ``method='mop'`` is the flat reducer (one triangulation of the whole
+    voice, see analyze_mop)."""
+    if method == 'tree':
+        return analyze_tree(score, part=part, reference=reference, weights=weights, **kw)
+    return analyze_mop(score, part=part, reference=reference, weights=weights, **kw)
+
+
+def analyze_mop(score, part: int = 0, reference='auto', weights='default', unit: float | None = None,
+                fundamental='auto', min_focal_units: float = 2.0, modules: bool = True,
+                frame: str = 'notes') -> dict:
+    """Reduce one voice with one triangulation of the whole voice.
 
     score      path or music21 Score
     part       index of the voice to reduce (duplum = 0 in the Dominus files)
@@ -105,7 +114,7 @@ def analyze(score, part: int = 0, reference='auto', weights='default', unit: flo
     prof_struct = FO.pitch_profile(notes, [float(tree.height[k + 1] + 1) for k in range(len(notes))])
 
     return {
-        'format': 'melodic-reduction/1',
+        'format': 'melodic-reduction/1', 'method': 'mop',
         'source': str(score) if not hasattr(score, 'parts') else None,
         'part': part, 'reference': reference, 'unit_ql': unit, 'frame': frame,
         'weights': w,
@@ -197,4 +206,170 @@ def summary(a: dict) -> str:
     for n in notes:
         rel[n['relation']] = rel.get(n['relation'], 0) + 1
     lines.append('elaboration types: ' + ', '.join(f'{k} {v}' for k, v in sorted(rel.items(), key=lambda kv: -kv[1])))
+    return '\n'.join(lines)
+
+
+# ------------------------------------------------------------------ grouped tree
+
+def _voice_tree(s, part, reference, w, unit, ligs, master=None):
+    """Salience, grouping and tree for one voice. ``master`` = (root, notes) of the voice whose
+    groups this one follows above the ordo (the tenor follows the duplum)."""
+    from . import grouping as G
+    from .tree import reduce_tree, map_hierarchy
+    notes = load_voice(s, part, reference)
+    ref_notes = load_voice(s, reference, part) if reference is not None else None
+    feats = F.base_features(notes, unit)
+    for f in feats:
+        f.pop('piece_edge', None)          # applied only at the top of the tree (tree.py)
+    sal = F.salience(feats, w)
+    ords = G.ordines(notes)
+    lig_spans = G.ligatures(s.parts[part], notes) if ligs else None
+    if master is None:
+        root = G.build_hierarchy(notes, ords, lig_spans, w.get('grouping', {}), ref_notes=ref_notes)
+        G.label_modules(notes, root, **w.get('labels', {}))
+    else:
+        root = map_hierarchy(master[0], master[1], notes, ords)
+        if root is None or root.first != 0 or root.last != len(notes) - 1:
+            # the master's groups do not cover this voice: group it on its own
+            root = G.build_hierarchy(notes, ords, None, w.get('grouping', {}), ref_notes=ref_notes)
+    res = reduce_tree(notes, root, sal, w, unit)
+    return notes, feats, sal, root, res, ords
+
+
+def analyze_tree(score, part: int = 0, reference='auto', weights='default', unit: float | None = None,
+                 fundamental='auto', ligatures: bool = False, reduce_reference: bool = True,
+                 min_focal_units: float = 2.0) -> dict:
+    """Reduce one voice group by group: ordines (optionally ligatures inside them), pairs, pairs
+    of pairs ... up to the whole voice; each group's members reduced to a head by the
+    prolongation rules; heads carried up. With a reference voice, that voice is reduced too,
+    following the same groups above the ordo.
+
+    fundamental  'auto' (heads of the level just below the sections: pairs of pairs in a
+                 clausula), 'level:L' (heads of the groups at level L), or 'notes:1,5,9'.
+    ligatures    use ligature brackets in the MusicXML as a level below the ordo.
+    """
+    from . import grouping as G
+    from .tree import heads_at, section_summary
+    s = load_score(score)
+    w = load_weights(weights)
+    nparts = len(s.parts)
+    if reference == 'auto':
+        reference = (1 - part) if nparts == 2 else None
+    unit = unit or bar_length(s)
+    notes, feats, sal, root, res, ords = _voice_tree(s, part, reference, w, unit, ligatures)
+    if len(notes) < 2:
+        raise ValueError('voice has fewer than two notes')
+    top = root.level
+
+    out_notes = []
+    for v in notes:
+        d = v.to_dict()
+        r = res['notes'][v.idx]
+        d.update({'salience': round(float(sal[v.idx]), 4),
+                  'features': {a: round(b, 4) for a, b in feats[v.idx].items()},
+                  'level': r['level'], 'level_name': G.level_name(r['level'], top) if r['level'] else 'surface',
+                  'reduced_at': r['reduced_at'], 'parent': r['parent'], 'relation': r['relation'],
+                  'local_height': r.get('local_height', 0)})
+        out_notes.append(d)
+
+    levels = {'surface': [n['idx'] for n in out_notes]}
+    for L in range(1, top + 1):
+        keep = [n['idx'] for n in out_notes if n['level'] >= L]
+        levels[G.LEVEL_NAMES.get(L, f'level {L}')] = keep
+        if L == top:
+            levels['piece'] = keep
+
+    fund_level = max(1, min(3, top - 1)) if fundamental in (None, 'auto') else None
+    if fund_level is not None:
+        fl = sorted(set(heads_at(root, fund_level)) | {0})
+        fund = {'rule': f'heads of each {G.level_name(fund_level, top)}, and the first note', 'notes': fl,
+                'level': fund_level}
+    elif str(fundamental).startswith('level:'):
+        L = int(str(fundamental).split(':')[1])
+        fund = {'rule': f'heads of each {G.level_name(L, top)}', 'notes': sorted(set(heads_at(root, L)) | {0}),
+                'level': L}
+    elif str(fundamental).startswith('notes:'):
+        fund = {'rule': 'given', 'notes': [int(x) for x in str(fundamental)[6:].split(',') if x]}
+    else:
+        raise ValueError(f'unknown fundamental spec {fundamental!r}')
+
+    edges = set()
+    for (L, f, l, k, pi, pj, rel) in res['dependencies']:
+        for a, b in ((pi, k), (k, pj), (pi, pj)):
+            if a is not None and b is not None:
+                edges.add((min(a, b), max(a, b)))
+    focal = FO.focal_spans(notes, None, unit, min_focal_units, edges=edges,
+                           heights=[r['level'] for r in (res['notes'][v.idx] for v in notes)])
+
+    out = {
+        'format': 'melodic-reduction/2', 'method': 'tree',
+        'source': str(score) if not hasattr(score, 'parts') else None,
+        'part': part, 'reference': reference, 'unit_ql': unit, 'ligatures': ligatures,
+        'weights': w,
+        'notes': out_notes,
+        'groups': root.to_dict(notes),
+        'level_names': {str(L): G.level_name(L, top) for L in range(0, top + 1)},
+        'levels': levels,
+        'fundamental': fund,
+        'sections': section_summary(notes, root, fund_level or 3),
+        'dependencies': [{'level': L, 'note': k, 'parent': [pi, pj], 'relation': rel}
+                         for (L, f, l, k, pi, pj, rel) in res['dependencies']],
+        'modules': [{'label': g.label, 'measures': [notes[g.first].measure, notes[g.last].measure],
+                     'first': g.first, 'last': g.last,
+                     'like': (None if getattr(g, 'similar_to', (None,))[0] is None else
+                              {'pair': g.similar_to[0], 'similarity': g.similar_to[1]})}
+                    for g in G.walk(root) if g.level == 2],
+        'focal_pitches': focal,
+        'dominant_focal_pitches': [{'pitch': x['pitch'], 'measures': x['measures'],
+                                    'length_units': x['length_units'], 'returns': x['returns'],
+                                    'returns_per_8_units': x['returns_per_8_units'],
+                                    'time_within_step': x['time_within_step']}
+                                   for x in FO.dominant_spans(focal)],
+        'relations_legend': REL_NAMES,
+    }
+    if reference is not None and reduce_reference:
+        rn, rf, rs, rroot, rres, _ = _voice_tree(s, reference, part, w, unit, False, master=(root, notes))
+        rtop = rroot.level
+        out['reference_voice'] = {
+            'part': reference,
+            'notes': [{**v.to_dict(), 'salience': round(float(rs[v.idx]), 4),
+                       'level': rres['notes'][v.idx]['level'],
+                       'reduced_at': rres['notes'][v.idx]['reduced_at'],
+                       'parent': rres['notes'][v.idx]['parent'],
+                       'relation': rres['notes'][v.idx]['relation']} for v in rn],
+            'groups': rroot.to_dict(rn),
+            'fundamental': {'notes': sorted(set(heads_at(rroot, max(1, min(fund_level or 3, rtop - 1)))) | {0}),
+                            'level': max(1, min(fund_level or 3, rtop - 1))},
+            'dependencies': [{'level': L, 'note': k, 'parent': [pi, pj], 'relation': rel}
+                             for (L, f, l, k, pi, pj, rel) in rres['dependencies']],
+        }
+    return out
+
+
+def summary_tree(a: dict) -> str:
+    notes = a['notes']
+    lines = [f"voice: {len(notes)} notes in {sum(1 for n in notes if n['after_rest'])} rest-groups"]
+    def walkg(g, depth=0):
+        yield g, depth
+        for c in g['children']:
+            yield from walkg(c, depth + 1)
+    names = a['level_names']
+    for g, depth in walkg(a['groups']):
+        if g['level'] >= 2:
+            h = notes[g['head']]
+            lab = f" {g['label']}" if g.get('label') else ''
+            lines.append(f"{'  ' * depth}{names[str(g['level'])]} m{g['measures'][0]}-{g['measures'][1]}{lab}: "
+                         f"head {h['pitch']} (m{h['measure']})")
+    fl = [notes[i] for i in a['fundamental']['notes']]
+    lines.append(f"fundamental line ({a['fundamental']['rule']}): " +
+                 ' '.join(f"{n['pitch']}(m{n['measure']})" for n in fl))
+    for sec in a['sections']:
+        ped = sec['pedal']
+        ped_s = f"; {ped['position']} pedal {ped['pitch']} ({ped['ordo_heads']} of {ped['of']} ordo heads)" if ped else ''
+        lines.append(f"m{sec['measures'][0]}-{sec['measures'][1]}: home {sec['home']}; ordo heads "
+                     + ' '.join(sec['ordo_head_line']) + ped_s)
+    if 'reference_voice' in a:
+        rv = a['reference_voice']
+        lines.append('reference voice line: ' + ' '.join(
+            f"{rv['notes'][i]['pitch']}(m{rv['notes'][i]['measure']})" for i in rv['fundamental']['notes']))
     return '\n'.join(lines)

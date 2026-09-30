@@ -11,19 +11,25 @@ consonance at structural points.
 ```bash
 pip install -e .          # numpy, music21 >= 9
 
-melodic-reduction analyze Dominus3.xml --json Dominus3.json        # duplum over tenor
-melodic-reduction reduce  Dominus3.xml --json Dominus3.json --out Dominus3_reduction.musicxml
+melodic-reduction analyze Dominus3.xml --json Dominus3.json        # duplum over tenor, grouped tree
+melodic-reduction analyze Dominus3.xml --method mop                 # the flat reducer
+melodic-reduction reduce  Dominus3.xml --json Dominus3.json --out Dominus3_reduction.musicxml --levels fundamental pair ordo
 melodic-reduction corpus  data/musicxml --out analysis/reduction    # every piece, plus summary.csv
 ```
 
 ```python
 import melodic_reduction as mr
-a = mr.analyze('Dominus3.xml', part=0)            # reference voice: the other part
-print(mr.summary(a))
-a['fundamental'], a['dominant_focal_pitches'], a['modules'], a['levels_by_span_units']
+a = mr.analyze('Dominus3.xml', part=0)            # reference voice: the other part, reduced too
+print(mr.summary_tree(a))
+a['groups'], a['sections'], a['fundamental'], a['dependencies'], a['reference_voice']
 ```
 
 ## How it works
+
+The default method (`tree`) first groups the voice: ordines (between rests), pairs of ordines,
+pairs of pairs, sections. It then reduces each group from the foreground up with the rules below,
+carrying each group's head up a level, and reduces the tenor the same way. The flat method
+(`mop`) does steps 1–3 over the whole voice at once:
 
 1. **Salience** of each note from metre, duration, consonance with the other voice, ordo
    boundaries and contour; notes in repeated modules share salience across occurrences.

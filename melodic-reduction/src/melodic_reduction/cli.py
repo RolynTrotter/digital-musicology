@@ -1,7 +1,7 @@
 """melodic-reduction command line.
 
     melodic-reduction analyze SCORE [--part 0] [--reference auto] [--weights default] [--json out.json]
-    melodic-reduction reduce SCORE --json analysis.json --out reduction.musicxml [--levels fundamental span:4]
+    melodic-reduction reduce SCORE --json analysis.json --out reduction.musicxml [--levels fundamental ordo]
     melodic-reduction corpus DIR --out results/        # every .xml/.musicxml/.mxl in DIR
     melodic-reduction gttm DIR                          # benchmark against the GTTM database
     melodic-reduction fit DIR --out weights.json        # fit salience weights on the GTTM database
@@ -14,7 +14,7 @@ import json
 import os
 import sys
 
-from .analyze import analyze, summary, write_json
+from .analyze import analyze, summary, summary_tree, write_json
 
 
 def _ref(x):
@@ -34,8 +34,12 @@ def main(argv=None):
     a.add_argument('--part', type=int, default=0)
     a.add_argument('--reference', default='auto', help="part index, 'auto' or 'none'")
     a.add_argument('--weights', default='default')
-    a.add_argument('--fundamental', default='auto', help="auto | span:T | height:H | count:K | notes:1,5,9")
-    a.add_argument('--frame', default='notes', choices=['notes', 'virtual'])
+    a.add_argument('--method', default='tree', choices=['tree', 'mop'],
+                   help='tree: reduce ordo by ordo and up through the formal groups (default); mop: one flat triangulation')
+    a.add_argument('--ligatures', action='store_true', help='tree: use ligature brackets as a level below the ordo')
+    a.add_argument('--fundamental', default='auto',
+                   help="tree: auto | level:L | notes:1,5,9;  mop: auto | span:T | height:H | count:K | notes:1,5,9")
+    a.add_argument('--frame', default='notes', choices=['notes', 'virtual'], help='mop only')
     a.add_argument('--unit', type=float, default=None, help='quarterLength of one unit (default: a bar)')
     a.add_argument('--json', default=None, help='write the full analysis here')
     a.add_argument('--no-modules', action='store_true')
@@ -44,13 +48,15 @@ def main(argv=None):
     r.add_argument('score')
     r.add_argument('--json', required=True, help='analysis from `analyze --json`')
     r.add_argument('--out', required=True)
-    r.add_argument('--levels', nargs='+', default=['fundamental', 'span:4'])
+    r.add_argument('--levels', nargs='+', default=['fundamental', 'ordo'],
+                   help="tree: fundamental, ordo, pair, 'pair of pairs' ...; mop: fundamental, span:T, height:H")
 
     c = sub.add_parser('corpus', help='analyse every score in a folder')
     c.add_argument('folder')
     c.add_argument('--out', required=True)
     c.add_argument('--part', type=int, default=0)
     c.add_argument('--weights', default='default')
+    c.add_argument('--ligatures', action='store_true')
 
     g = sub.add_parser('gttm', help='benchmark on the GTTM database (folders of MusicXML + TS-*.xml)')
     g.add_argument('folder')
@@ -65,10 +71,15 @@ def main(argv=None):
 
     args = ap.parse_args(argv)
     if args.cmd == 'analyze':
-        res = analyze(args.score, part=args.part, reference=_ref(args.reference), weights=args.weights,
-                      unit=args.unit, fundamental=args.fundamental, modules=not args.no_modules,
-                      frame=args.frame)
-        print(summary(res))
+        if args.method == 'tree':
+            res = analyze(args.score, part=args.part, reference=_ref(args.reference), weights=args.weights,
+                          unit=args.unit, fundamental=args.fundamental, ligatures=args.ligatures)
+            print(summary_tree(res))
+        else:
+            res = analyze(args.score, part=args.part, reference=_ref(args.reference), weights=args.weights,
+                          method='mop', unit=args.unit, fundamental=args.fundamental,
+                          modules=not args.no_modules, frame=args.frame)
+            print(summary(res))
         if args.json:
             write_json(res, args.json)
             print(f'wrote {args.json}')
@@ -84,19 +95,21 @@ def main(argv=None):
         for fn in files:
             name = os.path.splitext(os.path.basename(fn))[0]
             try:
-                res = analyze(fn, part=args.part, weights=args.weights)
+                res = analyze(fn, part=args.part, weights=args.weights, ligatures=args.ligatures)
             except Exception as e:
                 print(f'{name}: failed ({e})')
                 continue
             write_json(res, os.path.join(args.out, name + '.json'))
-            fl = [res['notes'][i]['pitch'] for i in res['fundamental']['notes']]
+            fl = [f"{res['notes'][i]['pitch']}@m{res['notes'][i]['measure']}" for i in res['fundamental']['notes']]
+            secs = '; '.join(f"m{x['measures'][0]}-{x['measures'][1]} home {x['home']}"
+                             + (f" {x['pedal']['position']} pedal {x['pedal']['pitch']}" if x['pedal'] else '')
+                             for x in res['sections'])
             rows.append({'piece': name, 'notes': len(res['notes']), 'fundamental': ' '.join(fl),
-                         'focal': '; '.join(f"{d['pitch']} m{d['measures'][0]}-{d['measures'][1]} x{d['returns']}"
-                                            for d in res['dominant_focal_pitches'])})
-            print(f"{name}: {' '.join(fl)} | {rows[-1]['focal']}")
+                         'modules': ' '.join(m['label'] for m in res['modules']), 'sections': secs})
+            print(f"{name}: {' '.join(fl)} | {secs}")
         import csv
         with open(os.path.join(args.out, 'summary.csv'), 'w', newline='') as fh:
-            w = csv.DictWriter(fh, fieldnames=['piece', 'notes', 'fundamental', 'focal'])
+            w = csv.DictWriter(fh, fieldnames=['piece', 'notes', 'fundamental', 'modules', 'sections'])
             w.writeheader()
             w.writerows(rows)
     elif args.cmd == 'gttm':

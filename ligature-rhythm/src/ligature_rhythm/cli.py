@@ -13,7 +13,7 @@ from .segment import guess_incipit, split
 
 
 def _model(args) -> Model:
-    return Model(load_weights(args.weights) if getattr(args, 'weights', None) else None)
+    return Model(load_weights(getattr(args, 'weights', None)))
 
 
 def _settings(args) -> list:
@@ -71,14 +71,14 @@ def cmd_evaluate(args):
 
 def cmd_train(args):
     from .train import fit_benchmark
-    model = fit_benchmark(_bench(args), epochs=args.epochs)
+    model = fit_benchmark(_bench(args), epochs=args.epochs, c_pa=args.c_pa)
     save_weights(model.w, args.out)
     print(f'wrote {args.out} ({len(model.w)} weights)')
 
 
 def cmd_cv(args):
     from .train import cross_validate
-    df = cross_validate(_bench(args), epochs=args.epochs, workers=args.workers)
+    df = cross_validate(_bench(args), epochs=args.epochs, workers=args.workers, c_pa=args.c_pa)
     print(df.round(3).to_string())
     print('\nmean:\n' + df.select_dtypes('number').mean().round(3).to_string())
     if args.csv:
@@ -109,7 +109,7 @@ def main(argv=None):
         if name == 'realise':
             s.add_argument('--out', default='.')
             s.add_argument('--prefix', default='clausula')
-            s.add_argument('--weights')
+            s.add_argument('--weights', help="weights file, or 'default' / 'dominus' (packaged)")
 
     for name, fn, hlp in (('evaluate', cmd_evaluate, 'compare with edition encodings'),
                           ('train', cmd_train, 'tune weights on edition encodings'),
@@ -120,10 +120,12 @@ def main(argv=None):
         s.add_argument('--editions', required=True)
         s.set_defaults(func=fn)
         if name == 'evaluate':
-            s.add_argument('--weights')
+            s.add_argument('--weights', help="weights file, or 'default' / 'dominus' (packaged)")
             s.add_argument('--csv')
         if name in ('train', 'cv'):
-            s.add_argument('--epochs', type=int, default=15)
+            s.add_argument('--epochs', type=int, default=8)
+            s.add_argument('--c-pa', type=float, default=0.01,
+                           help='largest step of each update (smaller = stays closer to the theory prior)')
         if name == 'train':
             s.add_argument('--out', default='weights.json')
         if name == 'cv':

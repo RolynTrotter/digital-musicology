@@ -35,8 +35,8 @@ from .items import TENOR, UPPER, voice_items
 from .realise import homorhythm, line_of, ordo_starts, read_pair, synch_targets
 
 log = logging.getLogger(__name__)
-C_PA = 0.05
-EPOCHS = 15
+C_PA = 0.01         # small steps keep the weights near the theory prior (generalises better)
+EPOCHS = 8
 STEPS = 'cdefgab'
 
 
@@ -270,11 +270,11 @@ def value_accuracy(examples, model: Model) -> list:
 
 
 def _fold(args):
-    bench, held_out, epochs = args
+    bench, held_out, epochs, c_pa = args
     train = [build_example(p, bench) for p in bench.pieces
              if p not in held_out and p not in bench.spec.get('exclude_from_training', [])]
     test = [build_example(p, bench) for p in held_out]
-    model = fit(train, epochs=epochs)
+    model = fit(train, epochs=epochs, c_pa=c_pa)
     rows = value_accuracy(test, model)
     df = bench.evaluate(model, held_out)
     for r in rows:
@@ -283,16 +283,16 @@ def _fold(args):
 
 
 def cross_validate(bench: Benchmark, groups: Optional[list] = None, epochs: int = EPOCHS,
-                   workers: Optional[int] = None):
+                   workers: Optional[int] = None, c_pa: float = C_PA):
     """Leave-one-group-out estimate, folds run in parallel. Pieces that are the same clausula (or
     share material) should be in one group (spec key "groups")."""
     import pandas as pd
     groups = groups or bench.spec.get('groups') or [[p] for p in bench.pieces]
     with ProcessPoolExecutor(max_workers=workers) as pool:
-        results = list(pool.map(_fold, [(bench, g, epochs) for g in groups]))
+        results = list(pool.map(_fold, [(bench, g, epochs, c_pa) for g in groups]))
     return pd.DataFrame([r for rows in results for r in rows]).set_index('piece')
 
 
-def fit_benchmark(bench: Benchmark, epochs: int = EPOCHS) -> Model:
+def fit_benchmark(bench: Benchmark, epochs: int = EPOCHS, c_pa: float = C_PA) -> Model:
     ex = [build_example(p, bench) for p in bench.pieces if p not in bench.spec.get('exclude_from_training', [])]
-    return fit(ex, epochs=epochs)
+    return fit(ex, epochs=epochs, c_pa=c_pa)

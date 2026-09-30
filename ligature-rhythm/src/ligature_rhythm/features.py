@@ -188,10 +188,16 @@ def _tup(x):
     return tuple(_tup(y) for y in x) if isinstance(x, list) else x
 
 
-def load_weights(path: Optional[Path] = None) -> dict:
-    """{feature: weight} from a weights.json (default: the tuned weights shipped with the package)"""
-    if path is None:
-        raw = json.loads(resources.files('ligature_rhythm').joinpath('data/weights.json').read_text())
+PACKAGED = {'default': 'weights.json', 'dominus': 'weights_dominus.json'}
+
+
+def load_weights(path=None) -> dict:
+    """{feature: weight} from a weights file, or one of the packaged sets:
+    'default' (tuned conservatively on the Dominus clausulae; for new repertory) or
+    'dominus' (fitted closely to the Dominus editions; best for those pieces, generalises worse)"""
+    if path is None or str(path) in PACKAGED:
+        name = PACKAGED[str(path) if path is not None else 'default']
+        raw = json.loads(resources.files('ligature_rhythm').joinpath('data/' + name).read_text())
     else:
         raw = json.loads(Path(path).read_text())
     return {_tup(json.loads(k)): v for k, v in raw.items()}

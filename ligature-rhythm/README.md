@@ -22,7 +22,7 @@ import ligature_rhythm as lr
 
 paths = [f'candr/setting_{i:04d}.mei' for i in range(865, 875)]      # consecutive settings, manuscript order
 clausulae, _ = lr.split(paths, incipit='DCCACDCBCDAFA')              # or lr.guess_incipit(paths)
-res = lr.realise(clausulae[0].upper, clausulae[0].tenor)
+res = lr.realise(clausulae[0].upper, clausulae[0].tenor)   # model=lr.Model(lr.load_weights('dominus')) for the Dominus fit
 lr.write('dominus.musicxml', res.upper, res.tenor, title='Dominus')
 res.info    # home modes, ordo-ending styles, which voice led, dropped synchronisations, organum flag
 ```
@@ -69,55 +69,64 @@ are tuned on edition-based encodings (`train.py`):
 
 ## Accuracy
 
-On the 14 Dominus encodings (13 from the same sources as CANDR's copies), see
-[`benchmarks/`](benchmarks/). In-sample means the pieces were used for tuning. Cross-validated
-means leave-one-clausula-out, with near-duplicate pieces held out together.
+Tested on the 14 Dominus encodings (see [`benchmarks/`](benchmarks/)). Notes are matched to the edition
+by pitch. **Cross-validated** means leave-one-clausula-out: each piece was read by a model tuned
+without it, with near-duplicate pieces held out together. That column is the fair estimate for
+new repertory.
 
-| Measure (13 same-source pieces) | v1 reader | v0.2, in-sample | v0.2, cross-validated |
-| --- | --- | --- | --- |
-| duplum values | 79% | 90% | (running) |
-| duplum onsets within ordo | 73% | 85% | (running) |
-| duplum onsets (strict) | 53% | 69% | (running) |
-| tenor values | 81% | 96% | (running) |
-| tenor onsets (strict) | 63% | 84% | (running) |
-| duplum over the right tenor note | 62% | 78% | (running) |
+| Measure (mean of 13 same-source pieces) | v1 reader¹ | v0.2, theory prior only | **v0.2, cross-validated²** | v0.2, fitted to these pieces³ |
+| --- | --- | --- | --- | --- |
+| duplum values | 79% | 73% | **78%** | 90% |
+| tenor values | 81% | 75% | **82%** | 96% |
+| duplum over the right tenor note | 62% | 70% | **68%** | 78% |
+| duplum onsets within ordo | 73% | 67% | **70%** | 85% |
+| tenor onsets within ordo | 83% | 78% | **85%** | 95% |
+| duplum onsets (strict) | 53% | 40% | **58%** | 69% |
+| tenor onsets (strict) | 63% | 48% | **68%** | 84% |
 
-- **v1 reader** is the previous hand-tuned cost table, run on the same (corrected) segmentation.
-- **Dominus 10** is left out of the means. Its encoding follows F 172v, which CANDR lacks, so it is
-  compared across sources.
-- **Measures:**
-  - *values*: same note value as the edition;
-  - *onsets (strict)*: same onset after one global offset, so one misplaced rest counts against
-    everything after it;
-  - *onsets within ordo*: same position within the ordo;
-  - *same tenor note*: the duplum note sounds over the same tenor note as in the edition.
+1. **v1 reader:** the previous hand-tuned cost table, on the same corrected segmentation. It was
+   tuned by looking at these same pieces, so it is not out-of-sample either.
+2. **Cross-validated:** the packaged `default` weights (conservative tuning: `--c-pa 0.01 --epochs 8`).
+   The less regularised fit reached only 74% / 79% on values when cross-validated.
+3. **Fitted to these pieces:** the packaged `dominus` weights (`--weights dominus`). This is the
+   best reading of these particular pieces, not an estimate for others.
 
-<details><summary>Per piece (in-sample)</summary>
+Dominus 10 is left out of the means. Its encoding follows F 172v, which CANDR lacks, so it is
+compared across sources.
 
-| Piece | source | duplum values | duplum onsets (strict / in ordo) | tenor values | tenor onsets | same tenor note |
-| --- | --- | --- | --- | --- | --- | --- |
-| D2 | F | 95% | 95% / 95% | 98% | 100% | 93% |
-| D3 | F | 97% | 93% / 93% | 98% | 98% | 91% |
-| D4 | F | 94% | 44% / 85% | 97% | 42% | 85% |
-| D5 | W1-49 | 88% | 47% / 58% | 97% | 78% | 65% |
-| D6 | F | 95% | 84% / 88% | 98% | 94% | 93% |
-| D7 | F | 94% | 40% / 90% | 93% | 33% | 82% |
-| D8 | F | 87% | 51% / 88% | 96% | 89% | 43% |
-| D9a | W1-55 | 98% | 95% / 95% | 95% | 95% | 98% |
-| D9b | F | 68% | 49% / 58% | 89% | 85% | 64% |
-| D10 | W1-55 | 72% | 41% / 78% | 52% | 42% | 15% |
-| D11 | F | 77% | 68% / 88% | 98% | 98% | 80% |
-| D12 | F | 96% | 98% / 98% | 98% | 100% | 99% |
-| D13 | F | 100% | 100% / 100% | 98% | 89% | 90% |
-| D14 | F | 83% | 37% / 72% | 87% | 89% | 32% |
+Measures:
+- *values*: same note value as the edition.
+- *over the right tenor note*: the duplum note sounds over the same tenor note as in the edition.
+- *onsets within ordo*: the same position within the ordo.
+- *strict onsets*: same onset after one global offset; one misplaced rest counts against everything
+  after it.
+
+**What generalises:** first-mode clausulae over a fifth-mode tenor read at 85–95% of values out of
+sample (D2–D8, D12, D13). **What doesn't:** pieces with a reading found nowhere else in the set
+(D14's first-mode tenor, the second-mode note-against-note 9b/11). With only ~11 independent
+clausulae, the tuned model cannot learn those from the others. More edition-based encodings are the
+most direct fix.
+
+<details><summary>Per piece</summary>
+
+| Piece | source | duplum values (CV / fit) | tenor values (CV / fit) | over the right tenor note (CV / fit) |
+| --- | --- | --- | --- | --- |
+| D2 | F | 92% / 95% | 96% / 98% | 91% / 93% |
+| D3 | F | 93% / 97% | 95% / 98% | 90% / 91% |
+| D4 | F | 87% / 94% | 98% / 97% | 93% / 85% |
+| D5 | W1-49 | 88% / 88% | 93% / 97% | 63% / 65% |
+| D6 | F | 93% / 95% | 98% / 98% | 91% / 93% |
+| D7 | F | 86% / 94% | 95% / 93% | 56% / 82% |
+| D8 | F | 86% / 87% | 96% / 96% | 23% / 43% |
+| D9a | W1-55 | 84% / 98% | 87% / 95% | 89% / 98% |
+| D9b | F | 55% / 68% | 73% / 89% | 51% / 64% |
+| D10 | W1-55 | 85% / 72% | 49% / 52% | 18% / 15% |
+| D11 | F | 46% / 77% | 44% / 98% | 40% / 80% |
+| D12 | F | 95% / 96% | 98% / 98% | 98% / 99% |
+| D13 | F | 94% / 100% | 91% / 98% | 77% / 90% |
+| D14 | F | 21% / 83% | 7% / 87% | 18% / 32% |
 
 </details>
-
-```bash
-ligature-rhythm evaluate benchmarks/dominus.json --candr-dir candr --editions editions
-ligature-rhythm cv benchmarks/dominus.json --candr-dir candr --editions editions --workers 4
-ligature-rhythm train benchmarks/dominus.json --candr-dir candr --editions editions --out weights.json
-```
 
 ## Limits
 

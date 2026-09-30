@@ -179,3 +179,26 @@ def test_stepwise_line_into_home(tmp_path):
     a = mr.analyze(path)
     lines = [sec['line'] for sec in a['sections'] if sec['line']]
     assert len(a['sections']) == 2 and len(lines) == 1 and [x.split('@')[0] for x in lines[0]] == ['F4', 'E4', 'D4']
+
+
+def test_tenor_ordo_in_gap_between_duplum_groups():
+    # a tenor ordo that ends while the duplum rests between two pairs still gets a place in the tree
+    from types import SimpleNamespace as N
+    from melodic_reduction.grouping import Group
+    from melodic_reduction.tree import map_hierarchy
+    dn = [N(onset=o, end=o + 1) for o in (0, 1, 2, 3, 6, 7, 8, 9)]           # duplum rests 4-6
+    o1 = lambda f, l: Group(level=1, first=f, last=l)
+    master = Group(level=3, first=0, last=7, children=[
+        Group(level=2, first=0, last=3, children=[o1(0, 1), o1(2, 3)]),
+        Group(level=2, first=4, last=7, children=[o1(4, 5), o1(6, 7)])])
+    tn = [N(onset=o, end=o + 1) for o in (0, 2, 5, 6, 8)]                    # tenor ordo at 5 in the gap
+    g = map_hierarchy(master, dn, tn, [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)])
+    covered = set()
+
+    def walk(x):
+        if x.level == 1:
+            covered.update(range(x.first, x.last + 1))
+        for c in x.children:
+            walk(c)
+    walk(g)
+    assert covered == set(range(5))

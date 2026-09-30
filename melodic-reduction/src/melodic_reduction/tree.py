@@ -158,14 +158,13 @@ def map_hierarchy(master: Group, master_notes, notes, ordo_spans) -> Group:
         if all(c.level <= 1 for c in mg.children):
             kids = pool
         else:
-            for c in mg.children:
-                t0, t1 = span(c)
-                sub = [o for o in pool if t0 - 1e-6 <= notes[o.last].onset < t1 - 1e-6]
-                # the last master child also takes ordines that run past its end
-                if c is mg.children[-1]:
-                    sub += [o for o in pool if notes[o.last].onset >= t1 - 1e-6 and o not in sub]
-                if c is mg.children[0]:
-                    sub = [o for o in pool if notes[o.last].onset < t0 - 1e-6] + sub
+            # partition by the master children's starts, so an ordo ending in a gap between
+            # two children (the duplum resting while the tenor sounds) goes to the earlier one
+            starts = [span(c)[0] for c in mg.children]
+            for i, c in enumerate(mg.children):
+                lo = -float('inf') if i == 0 else starts[i] - 1e-6
+                hi = float('inf') if i == len(starts) - 1 else starts[i + 1] - 1e-6
+                sub = [o for o in pool if lo <= notes[o.last].onset < hi]
                 b = build(c, sub)
                 if b is not None:
                     kids.append(b)

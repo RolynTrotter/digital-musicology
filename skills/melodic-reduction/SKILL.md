@@ -1,6 +1,6 @@
 ---
 name: melodic-reduction
-description: "Tonality-free melodic reduction (modified Schenkerian analysis) of a MusicXML score, built as a tree from the foreground up: each ordo reduced on its own, then pairs of ordines, pairs of pairs and sections, with home notes, pedal/focal pitches, module labels and the tenor reduced alongside. Use for reducing a melody, finding what a passage prolongs, or comparing the skeletons of clausulae or other pre-tonal music."
+description: "Tonality-free melodic reduction built as a tree from the foreground up (ordo, pair, pair of pairs), with home notes, pedal pitches, stepwise lines and the tenor reduced too. For clausulae and other pre-tonal music."
 ---
 
 # Melodic reduction: a tree from the foreground up
@@ -19,23 +19,42 @@ second voice. To draw the result, use the **schenker-graph** skill afterwards.
 | Weights | `src/melodic_reduction/data/weights_default.json` (rules, default); `weights_gttm.json` (flat-method salience fitted to the GTTM database) |
 | Tests | `melodic-reduction/tests/` |
 | Dominus encodings (authoritative) | `~/Documents/DominusClausulae/data/musicxml/DominusN.xml` on Alex's computer (from Baltzer's edition) |
-| Earlier results | `~/Documents/DominusClausulae/analysis/reduction/` |
+| Results for all 16 clausulae | `~/Documents/DominusClausulae/analysis/reduction/corpus/` (JSON + summary.csv) and `graphs/` |
+| Payne corpus (F fasc. 5, 461 sections) | `~/Documents/DominusClausulae/data/payne_f5/F5_NNN.xml` + `index.json` (number, folio, system, title) |
+| Folder guide | `~/Documents/DominusClausulae/README.md`; the Project doc `DominusClausulae_folder_guide.md` |
 
-**Getting the package:** clone the branch and `pip install -e melodic-reduction` (numpy, music21
+**Getting the package:** on Alex's computer it is cloned at
+`~/Documents/DominusClausulae/tools/digital-musicology` (branch `melodic-reduction`; `git pull` to
+update). Elsewhere, clone the branch. Then `pip install -e melodic-reduction` (numpy, music21
 ≥ 9; tested with 9.9.2 on Python 3.11 and the music21 repository head, 11.0.0b9, on 3.12). If the
 repository can't be reached, ask for the folder. Don't rewrite the package from memory.
+
+## Corpora
+
+| Corpus | Where | Notes |
+| --- | --- | --- |
+| Dominus 1–15 (incl. 9a/9b) | `data/musicxml/DominusN.xml` | Alex's encodings from Baltzer; authoritative. Dominus 2 is provisional (a second, incomplete transcription of Dom 3): report with and without it, never count it as independent of Dom 3 |
+| F fascicle 5, all two-voice clausulae | `data/payne_f5/F5_NNN.xml` (`F5_008a`, `F5_008b` … for sections) | Payne's DIAMM edition read by `tools/payne_pdf.py` (`f5-payne` branch): 461 of 480 measured sections, only those whose two staves agree note for note in time. `index.json` gives Payne's number, folio, system and title (with the source organum, e.g. `[M1: Viderunt omnes. Notum fecit]`). Local research use only: do not publish the encodings. The Dominus pieces are nos. 26–36, 227–228, 458; Payne no. 26 matches Alex's Dominus 3 at 95% of duplum notes |
+| CANDR realisations | `data/musicxml_from_candr/` | from ligature-rhythm; rhythm only ~80% right, use for manuscript questions |
+
+The whole Payne corpus runs in about 3 minutes (`melodic-reduction corpus data/payne_f5 --out
+analysis/reduction_f5/corpus`, no failures). To compare clausulae on the same chant, group the
+sections by the chant in `index.json` titles (the bracket after the title). The Project doc
+`reference/Payne_F_fasc5_Clausulae_a2_DIAMM_2026.md` has the edition's full index and notes.
 
 ## Workflow
 
 1. **Use Alex's encodings**, not CANDR realisations, unless the question is about the manuscript.
    CANDR follows F where Baltzer's edition differs (Dom 3: E–C–E–F–D for E–D–E–F–D in mm. 13 and
    29, F with a plica for E–D in m. 40, tenor A for B♭ in m. 54), and the ligature-rhythm reader
-   gets some rhythms wrong (Dom 3 tenor mm. 81–82: L. + rest for a duplex long).
-2. **Analyse.** Part 0 = duplum, part 1 = tenor; the tenor is reduced too.
+   gets some rhythms wrong (Dom 3 tenor mm. 81–82: L. + rest for a duplex long). Dom 1's tenor has
+   dangling ties (mm. 59–62) in the encoding.
+2. **Analyse.** Part 0 = duplum, part 1 = tenor; the tenor is reduced too. For a monophonic
+   melody pass `reference=None`.
    ```bash
    melodic-reduction analyze Dominus3.xml --json Dominus3.json          # tree (default)
    melodic-reduction analyze F149r.musicxml --ligatures --json F.json   # ligatures as a level below the ordo
-   melodic-reduction corpus ~/Documents/DominusClausulae/data/musicxml --out analysis/reduction
+   melodic-reduction corpus ~/Documents/DominusClausulae/data/musicxml --out analysis/reduction/corpus
    ```
    ```python
    import melodic_reduction as mr
@@ -48,10 +67,10 @@ repository can't be reached, ask for the folder. Don't rewrite the package from 
      … `piece`. The unit is the tenor's ordo length (see below); a duplum ordo that runs through
      the tenor's rest is cut there and re-paired. Each group has a `head`; pairs have a `label`.
    - `sections` (one per pair of pairs): `home` note (the group's head, usually its last note),
-     the line of ordo heads, and the `pedal`: the pitch that recurs most among the ordo heads
-     other than the home note, with `position` upper/lower; and the `line`: a stepwise chain of
-     ordo heads into the home note (F–E–D in Dom 3 mm. 57–72). In Dom 3 this gives home D with an
-     upper pedal F in mm. 1–32, as Alex hears it.
+     the line of ordo heads (`ordo_heads`, `ordo_head_line`), the `pedal`: the pitch that recurs
+     most among the ordo heads other than the home note, with `position` upper/lower and
+     `pedal_notes`; and the `line`: a stepwise chain of ordo heads into the home note (F–E–D in
+     Dom 3 mm. 57–72). In Dom 3 this gives home D with an upper pedal F in mm. 1–32, as Alex hears it.
    - `fundamental`: heads of each pair of pairs plus the first note. `fundamental='level:2'`
      (pair heads) gives a more detailed line.
    - `levels`: nested reductions `surface`, `ordo`, `pair`, `pair of pairs` … as note lists.
@@ -99,15 +118,26 @@ repository can't be reached, ask for the folder. Don't rewrite the package from 
 
 ## Calibration and checks
 
+- The defaults are rules, not a trained model; each weight is one rule and rules.md gives the
+  source.
 - `grouping.cadence_high` = 1.5 was set on Dom 3 (it is what finds the extra pair in mm. 33–56),
-  so Dom 3 is not an independent test. With the tenor unit, the corpus groups regularly except
-  Dom 1 (organum pages), Dom 5 and 12 (irregular ordo lengths). Look at the grouping before
-  quoting results and say when it looks wrong; Alex's own readings are the check.
+  and the label rule came from Alex's reading of Dom 3, so Dom 3 is not an independent test.
+  With the tenor unit, the corpus groups regularly except Dom 1 (organum pages), Dom 5 and 12
+  (irregular ordo lengths). Only Dom 3 has been checked against Alex's reading; look at the
+  grouping and labels before quoting results for another piece and say when they look wrong.
+- The Payne corpus is much more varied (other chants, modes, first-mode and irregular tenors,
+  organal and unmeasured passages). Nothing has been checked there yet: before a corpus-wide claim,
+  graph and inspect a sample across chants and tenor types, and report pieces whose grouping is
+  irregular (pairs of pairs far from the usual length) separately.
 - Known disagreement with Alex (Dom 3 mm. 33–56): he marks F home; the tool gives C (the arrival,
   m. 55) with F as pedal on 4 of 6 ordo heads. Report both when a pedal heads most of the ordines.
 - Other checks: run with and without `ligatures`; compare edition and CANDR readings; look at the
-  graph before quoting a line.
-- The flat reducer (`method='mop'`) and its GTTM benchmark are still there; rules.md §5–6.
+  graph before quoting a line. Rhythm matters: a wrong modal reading changes the reduction.
+- To fit weights on clausulae, the missing piece is gold reductions. If Alex makes some (as
+  schenker-graph specs), fit on those.
+- The flat reducer (`method='mop'`, with `frame`, `span:T` levels and `weights='gttm'`) and its
+  GTTM-database benchmark (`melodic-reduction gttm DIR`, `fit DIR`) are still there; rules.md
+  §5–6.
 
 ## Objections to have answers for
 

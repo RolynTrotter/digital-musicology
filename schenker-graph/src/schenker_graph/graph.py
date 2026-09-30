@@ -85,7 +85,7 @@ def _dep_slur(k, pi, pj):
 
 
 def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=True,
-                    staff=None, max_slur_level=None) -> Graph:
+                    staff=None, max_slur_level=None, pedal_stems=True, system_breaks=True) -> Graph:
     """Overlays for a grouped-tree analysis (method 'tree').
 
     * fundamental line: red, stems and beam (above the duplum; below the tenor);
@@ -102,7 +102,7 @@ def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=
     fund = sorted(a['fundamental']['notes'])
     fset = set(fund)
     g = Graph(staff=(staff if staff is not None else a.get('part', 0) + 1), fundamental=fund,
-              voice_pitches=[n['pitch'] for n in notes])
+              voice_pitches=[n['pitch'] for n in notes], voice_onsets=[n['onset'] for n in notes])
     g.middleground = [n['idx'] for n in notes if n['level'] >= 1 and n['idx'] not in fset]
     g.colors.setdefault('foreground', '#7a8fa8')
 
@@ -129,6 +129,70 @@ def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=
         keep = levels_all if slurs == 'all' else {L for L in levels_all if L >= 2}
         add_slurs(g, a['dependencies'], 'below', 'above', keep)
 
+    if pedal_stems:
+        # the piece's pedal: the pitch that is the pedal of the most pairs of pairs (at least two);
+        # its ordo heads get an extra up-stem (down-stem for a lower pedal)
+        from collections import Counter
+        cnt = Counter((sec['pedal']['pitch'], sec['pedal']['position'])
+                      for sec in a.get('sections', []) if sec.get('pedal'))
+        ped, pos = [], 'upper'
+        if cnt and cnt.most_common(1)[0][1] >= 2:
+            (pp, pos), _ = cnt.most_common(1)[0]
+            ped = sorted({k for sec in a['sections'] if sec.get('pedal') and sec['pedal']['pitch'] == pp
+                          for k in sec.get('pedal_notes', [])} - fset)
+        if ped:
+            g.colors.setdefault('pedal', '#6b3fa0')
+            g.stems.append({'notes': ped, 'direction': 'up' if pos == 'upper' else 'down',
+                            'length': 4.5})
+    if system_breaks:
+        # one system per pair of pairs (per pair when a pair of pairs is long): ordines never
+        # straddle a system break, so the foreground slurs stay whole
+        def walkg(x):
+            yield x
+            for c in x['children']:
+                yield from walkg(c)
+        pops = [x for x in walkg(a['groups']) if x['level'] == 3] or \
+               [x for x in walkg(a['groups']) if x['level'] == 2]
+        if pops:
+            lens = [notes[x['last']]['onset'] + notes[x['last']]['dur'] - notes[x['first']]['onset'] for x in pops]
+            med = sorted(lens)[len(lens) // 2]
+            for x, L in zip(pops, lens):
+                g.breaks.append(x['first'])
+                if L > 1.3 * med:
+                    # a long pair of pairs: fill systems pair by pair up to the usual length
+                    start = notes[x['first']]['onset']
+                    for c in x['children'][1:]:
+                        c_end = notes[c['last']]['onset'] + notes[c['last']]['dur']
+                        if c_end - start > 1.1 * med:
+                            g.breaks.append(c['first'])
+                            start = notes[c['first']]['onset']
+            g.breaks = sorted(set(g.breaks))
+            # move each break to the nearby barline (within two bars) that cuts the fewest ordines
+            # of either voice: a voice whose ordines are out of phase with the other's should not
+            # have its ordines split across systems
+            def spans(voice_notes, groups):
+                out = []
+                def walk1(x):
+                    if x['level'] <= 1:
+                        out.append((voice_notes[x['first']]['measure'], voice_notes[x['last']]['measure']))
+                        return
+                    for c in x['children']:
+                        walk1(c)
+                walk1(groups)
+                return out
+            ords = spans(notes, a['groups'])
+            if a.get('reference_voice'):
+                ords += spans(a['reference_voice']['notes'], a['reference_voice']['groups'])
+            last_m = max(n['measure'] for n in notes)
+            chosen = []
+            for k in g.breaks:
+                b = notes[k]['measure']
+                if b <= 1:
+                    continue
+                cands = [m for m in range(max(2, b - 2), min(last_m, b + 2) + 1)]
+                cut = lambda m: sum(1 for f, l in ords if f < m <= l)
+                chosen.append(min(cands, key=lambda m: (cut(m), abs(m - b))))
+            g.break_measures = sorted(set(chosen))
     if labels:
         for m in a.get('modules', []):
             g.labels.append({'at': m['first'], 'text': m['label'].replace('′', "'"), 'place': 'above', 'bold': True})
@@ -139,41 +203,96 @@ def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=
             if sec.get('pedal'):
                 txt += f", {sec['pedal']['position']} pedal {_pitch_label(sec['pedal']['pitch'][:-1])}"
             if sec.get('line'):
-                txt += ', line ' + '–'.join(_pitch_label(x.split('@')[0][:-1]) for x in sec['line'])
+                txt += '\nline ' + '–'.join(_pitch_label(x.split('@')[0][:-1]) for x in sec['line'])
             g.labels.append({'at': first, 'text': txt, 'place': 'below'})
 
     rv = a.get('reference_voice')
     if reference and rv:
         t = Graph(staff=rv['part'] + 1, fundamental=sorted(rv['fundamental']['notes']),
-                  beam_direction='down', voice_pitches=[n['pitch'] for n in rv['notes']])
+                  beam_direction='down', voice_pitches=[n['pitch'] for n in rv['notes']],
+                  voice_onsets=[n['onset'] for n in rv['notes']])
         tf = set(t.fundamental)
         t.middleground = [n['idx'] for n in rv['notes'] if n['level'] >= 1 and n['idx'] not in tf]
         t.colors.setdefault('foreground', '#7a8fa8')
         if slurs:
-            add_slurs(t, rv['dependencies'], 'below', 'below',
-                      {d['level'] for d in rv['dependencies'] if 2 <= d['level'] <= top_slur - 1})
+            tl = {d['level'] for d in rv['dependencies'] if d['level'] <= top_slur}
+            if slurs != 'all':
+                tl = {L for L in tl if L >= 2}
+            # mirror of the duplum: the foreground inside each ordo between the staves (above the
+            # tenor), connections between heads outside (below)
+            add_slurs(t, rv['dependencies'], 'above', 'below', tl)
         g.others.append(t)
     return g
 
 
+def unaccounted(graph: Graph, n_notes: int) -> list[int]:
+    """Notes of a staff that no slur spans or ends on and that are not on the beam: every note of
+    a graph should be accounted for."""
+    covered = set(graph.fundamental) | {k for st in graph.stems for k in st['notes']}
+    for s in graph.slurs:
+        a, b = sorted((s['from'], s['to']))
+        covered.update(range(a, b + 1))
+    return [k for k in range(n_notes) if k not in covered]
+
+
 def engrave(score_path, graph: Graph, voice_pitches, out_prefix, formats=('svg', 'png', 'pdf'),
-            options=None, keep_mei=True, extra_beam_staves=(), beam_voice=True):
+            options=None, keep_mei=True, extra_beam_staves=(), beam_voice=True, fix_labels=True):
     """``extra_beam_staves``: staves (1-based) whose notes are all beamed as a line as well,
     e.g. the 'fundamental' staff of a stacked reduction."""
     mei = annotated_mei(score_path, graph, voice_pitches, options)
     from lxml import etree
     root = etree.fromstring(mei.encode('utf-8'))
     xid = '{http://www.w3.org/XML/1998/namespace}id'
-    ids = [n.get(xid) for n in staff_notes(root, graph.staff)]
+    ids = getattr(graph, 'note_ids', None) or [n.get(xid) for n in staff_notes(root, graph.staff)]
     lines = [{'ids': [ids[k] for k in sorted(graph.fundamental)], 'direction': graph.beam_direction}] if beam_voice else []
     for other in graph.others:
-        oids = [n.get(xid) for n in staff_notes(root, other.staff)]
+        oids = getattr(other, 'note_ids', None) or [n.get(xid) for n in staff_notes(root, other.staff)]
         if other.fundamental:
             lines.append({'ids': [oids[k] for k in sorted(other.fundamental)],
                           'direction': other.beam_direction, 'color': other.colors['fundamental']})
     for st in extra_beam_staves:
         lines.append({'ids': [n.get(xid) for n in staff_notes(root, st)], 'direction': 'up'})
+    for gr in [graph] + list(graph.others):
+        gids = ids if gr is graph else (getattr(gr, 'note_ids', None) or [n.get(xid) for n in staff_notes(root, gr.staff)])
+        for st in gr.stems:
+            if st.get('drawn'):          # an extra stem drawn on the SVG instead of the note's own
+                lines.append({'ids': [gids[k] for k in st['notes']], 'beam': False,
+                              'direction': st.get('direction', 'up'), 'color': st.get('color'),
+                              'length': st.get('length', 3.5)})
     pages = render(mei, graph, lines, options)
+    # a label that a slur runs through goes to the other side of its staff, if that is cleaner
+    from .collide import collisions as _coll
+    from .mei import _q as _mq
+    def _bad(pgs):
+        return {c[3] for pg in pgs for c in _coll(pg) if c[0] == 'slur-text'}
+
+    def _count(pgs):
+        return sum(1 for pg in pgs for c in _coll(pg) if c[0] == 'slur-text')
+
+    # a label that a slur runs through: try it on the other side of its staff, then nudged
+    # further out (1, 2, 3 staff spaces); keep whatever leaves fewest label collisions
+    if fix_labels:
+        for attempt in ('flip', 2, 4, 6):
+            bad = _bad(pages)
+            if not bad:
+                break
+            root2 = etree.fromstring(mei.encode('utf-8'))
+            changed = 0
+            for d in root2.iter(_mq('dir')):
+                if d.get(xid) not in bad:
+                    continue
+                if attempt == 'flip':
+                    d.set('place', 'above' if d.get('place') == 'below' else 'below')
+                else:
+                    sign = 1 if d.get('place', 'above') == 'above' else -1
+                    d.set('vo', f'{sign * attempt}vu')
+                changed += 1
+            if not changed:
+                break
+            mei2 = etree.tostring(root2, xml_declaration=True, encoding='UTF-8').decode('utf-8')
+            pages2 = render(mei2, graph, lines, options)
+            if _count(pages2) < _count(pages):
+                mei, pages = mei2, pages2
     written = write_pages(pages, out_prefix, formats)
     if keep_mei:
         p = Path(out_prefix).with_suffix('.mei')
@@ -223,13 +342,13 @@ def schenker_graph(score_path, analysis: dict | str | None = None, graph: dict |
     elif isinstance(analysis, (str, Path)):
         analysis = json.loads(Path(analysis).read_text())
     if analysis.get('method') == 'tree':
-        auto_kw = {k: kw.pop(k) for k in list(kw) if k in ('slurs', 'labels', 'sections', 'reference')}
+        auto_kw = {k: kw.pop(k) for k in list(kw) if k in ('slurs', 'labels', 'sections', 'reference', 'pedal_stems', 'max_slur_level', 'system_breaks')}
         for k in ('middleground', 'focal', 'modules', 'label_focal', 'module_brackets'):
             kw.pop(k, None)
         g = graph_from_tree(analysis, **auto_kw)
     else:
         auto_kw = {k: kw.pop(k) for k in list(kw) if k in ('middleground', 'focal', 'modules', 'slurs', 'label_focal', 'module_brackets')}
-        for k in ('labels', 'sections', 'reference'):
+        for k in ('labels', 'sections', 'reference', 'pedal_stems', 'max_slur_level', 'system_breaks'):
             kw.pop(k, None)
         g = graph_from_analysis(analysis, **auto_kw)
     if graph is not None:

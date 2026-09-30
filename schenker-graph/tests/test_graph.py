@@ -60,3 +60,16 @@ def test_stacked(score_path, tmp_path):
                                     stacked=('fundamental', 'ordo'))
     assert g.staff == 3
     assert any(str(f).endswith('.svg') for f in files)
+
+
+def test_every_note_accounted_and_no_collisions(score_path, tmp_path):
+    from schenker_graph.graph import graph_from_tree, unaccounted
+    from schenker_graph.collide import collisions
+    a = mr.analyze(score_path)
+    g = graph_from_tree(a)
+    assert unaccounted(g, len(a['notes'])) == []
+    assert unaccounted(g.others[0], len(a['reference_voice']['notes'])) == []
+    files, g, _ = sg.schenker_graph(score_path, analysis=a, out_prefix=tmp_path / 'c', formats=('svg',))
+    for f in files:
+        if str(f).endswith('.svg'):
+            assert [c for c in collisions(open(f).read()) if c[0] == 'slur-text'] == []

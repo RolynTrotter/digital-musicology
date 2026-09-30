@@ -50,7 +50,12 @@ class Graph:
     beam_direction: str = 'up'   # 'up' (beam above the staff) or 'down' (below: a lower voice)
     title: str | None = None
     voice_pitches: list | None = None   # pitches of the analysed voice, to check the alignment
+    voice_onsets: list | None = None    # onsets (quarter notes) of the analysed voice: align by time
     others: list = field(default_factory=list)   # overlays for other staves (Graphs)
+    stems: list = field(default_factory=list)    # stemmed notes without a beam: {notes, direction, length}
+    breaks: list = field(default_factory=list)   # note indices: start a new system at their measure
+    break_measures: list = field(default_factory=list)   # or measure numbers (used when given)
+    systems_per_page: int = 5
 
     @classmethod
     def from_dict(cls, d):
@@ -67,7 +72,8 @@ class Graph:
     def to_dict(self):
         d = {k: getattr(self, k) for k in ('staff', 'fundamental', 'middleground', 'slurs',
                                            'labels', 'brackets', 'colors', 'beam_gap',
-                                           'beam_thickness', 'beam_direction', 'title')}
+                                           'beam_thickness', 'beam_direction', 'title', 'stems',
+                                           'breaks', 'break_measures', 'systems_per_page')}
         d['others'] = [o.to_dict() for o in self.others]
         return d
 
@@ -143,17 +149,85 @@ def _nid(prefix):
     return f'{prefix}{_idc[0]:05d}'
 
 
-def annotate_mei(mei_root, graph: Graph, voice_pitches):
+def _insert_breaks(mei_root, first_notes, per_page=5, measures=None):
+    """System breaks (<sb/>) before the measures holding ``first_notes``, and a page break (<pb/>)
+    every ``per_page`` systems. Render with verovio's breaks='encoded'."""
+    # the source's own layout (MusicXML <print new-system/new-page>) is replaced
+    for el in list(mei_root.iter(_q('sb'), _q('pb'))):
+        el.getparent().remove(el)
+    targets = []
+    for n in first_notes:
+        m = _control_parent(n)
+        if m is not None and m not in targets:
+            targets.append(m)
+    if measures:
+        want = {str(x) for x in measures}
+        targets += [m for m in mei_root.iter(_q('measure')) if m.get('n') in want and m not in targets]
+    measures = list(mei_root.iter(_q('measure')))
+    order = {id(m): i for i, m in enumerate(measures)}
+    targets = sorted((m for m in targets if order[id(m)] > 0), key=lambda m: order[id(m)])
+    for i, m in enumerate(targets, 1):
+        br = etree.Element(_q('pb') if i % per_page == 0 else _q('sb'))
+        br.set(XML_ID, _nid('brk'))
+        m.addprevious(br)
+
+
+def staff_notes_by_onset(mei_root, staff_n: int, onsets, qstamps: dict):
+    """The staff's MEI notes that sound at ``onsets`` (quarter notes from the start), using
+    verovio's timemap (``qstamps``: note id -> onset). Robust to ties the encoding leaves
+    dangling, which make tie-skipping and the analysis disagree about which notes exist."""
+    by_q = {}
+    for staff in mei_root.iter(_q('staff')):
+        if staff.get('n') != str(staff_n):
+            continue
+        for n in staff.iter(_q('note')):
+            q = qstamps.get(n.get(XML_ID))
+            if q is None or n.get('grace'):
+                continue
+            key = round(q, 3)
+            if key not in by_q or _note_height(n) > _note_height(by_q[key]):
+                by_q[key] = n
+    out = []
+    for o in onsets:
+        n = by_q.get(round(o, 3))
+        if n is None:
+            raise ValueError(f'no note on staff {staff_n} at quarter {o}')
+        out.append(n)
+    return out
+
+
+def annotate_mei(mei_root, graph: Graph, voice_pitches, qstamps: dict | None = None):
+    # align in note order (tie continuations skipped); if the encoding's ties make that disagree
+    # with the analysis, align by onset through verovio's timemap
     notes = staff_notes(mei_root, graph.staff)
-    if voice_pitches:
-        check_alignment(notes, voice_pitches)
+    try:
+        if voice_pitches:
+            check_alignment(notes, voice_pitches)
+    except ValueError:
+        if not (qstamps and graph.voice_onsets):
+            raise
+        notes = staff_notes_by_onset(mei_root, graph.staff, graph.voice_onsets, qstamps)
+        if voice_pitches:
+            check_alignment(notes, voice_pitches)
     ids = [n.get(XML_ID) for n in notes]
+    graph.note_ids = ids
 
     for k in graph.middleground:
         notes[k].set('color', graph.colors['middleground'])
     for k in graph.fundamental:
         notes[k].set('color', graph.colors['fundamental'])
         notes[k].set('stem.dir', graph.beam_direction)
+    for st in graph.stems:
+        # the note's own stem, turned and lengthened: slurs then attach at its tip instead of
+        # crossing it (length in staff spaces; MEI stem.len is in half spaces)
+        for k in st['notes']:
+            if k not in graph.fundamental:
+                notes[k].set('stem.dir', st.get('direction', 'up'))
+                notes[k].set('stem.len', f"{2 * st.get('length', 4.5):g}vu")
+    if graph.break_measures:
+        _insert_breaks(mei_root, [], graph.systems_per_page, measures=graph.break_measures)
+    elif graph.breaks:
+        _insert_breaks(mei_root, [notes[k] for k in graph.breaks], graph.systems_per_page)
 
     for s in graph.slurs:
         a, b = s['from'], s['to']
@@ -183,7 +257,11 @@ def annotate_mei(mei_root, graph: Graph, voice_pitches):
         if lab.get('bold'):
             rend.set('fontweight', 'bold')
             rend.set('fontstyle', 'normal')
-        rend.text = lab['text']
+        parts = str(lab['text']).split('\n')
+        rend.text = parts[0]
+        for extra in parts[1:]:
+            lb = etree.SubElement(rend, _q('lb'))
+            lb.tail = extra
 
     for br in graph.brackets:
         el = etree.SubElement(_control_parent(notes[br['from']]), _q('dir'))
@@ -205,5 +283,5 @@ def annotate_mei(mei_root, graph: Graph, voice_pitches):
             title.text = graph.title
             break
     for other in graph.others:
-        annotate_mei(mei_root, other, other.voice_pitches or [])
+        annotate_mei(mei_root, other, other.voice_pitches or [], qstamps)
     return ids

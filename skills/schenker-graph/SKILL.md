@@ -36,9 +36,12 @@ his own reading.
    files, graph, analysis = sg.schenker_graph('Dominus3.xml', analysis='Dominus3.json', out_prefix='graphs/D3')
    ```
    Writes `_pN.svg`, `_pN.png`, `.pdf`, and the annotated `.mei`.
-3. **Look at every page** (Read the PNGs) before handing anything over. Check that the beam is
-   continuous from the first fundamental note to the last (running to the system edge when it
-   continues), that stems land on the right noteheads, and that labels don't sit on each other.
+3. **Check, then look.** `schenker_graph.graph.unaccounted(graph, n)` lists notes that no slur,
+   beam or stem accounts for (duplum: `graph`; tenor: `graph.others[0]`); it should be empty.
+   `schenker_graph.collide.collisions(svg)` lists slurs running through labels, beams, stems (away
+   from the note the slur ends on) or ties; engraving already moves colliding labels to the other
+   side or further out, so anything left needs a look. Then Read every PNG: the beam continuous
+   from the first fundamental note to the last, across pages; stems on the right noteheads.
 4. **Deliver** the PDF (and PNGs if they want to paste them), and list the fundamental line and
    focal pitches in the reply with measure numbers.
 
@@ -52,7 +55,13 @@ his own reading.
 | Grey-blue slurs | the reduction inside each ordo (foreground): each note slurred to the notes it lies between or leads to | below the duplum |
 | Blue slurs | how ordo heads connect inside pairs and pairs of pairs | above the duplum, below the tenor |
 | Bold letters (a, a', b …) | pair (module) labels by duplum similarity | above |
-| Italic text | home note and pedal pitch of each pair of pairs | below the duplum |
+| Blue notes with long up-stems | the piece's pedal pitch (e.g. Dom 3's upper pedal F) at each ordo head where it recurs; slurs attach at the stem tip | duplum |
+| Italic text | home note, pedal pitch and stepwise line of each pair of pairs (two lines) | below the duplum |
+
+**Layout.** One system per pair of pairs (a long pair of pairs fills systems pair by pair), so no
+ordo is split across systems and foreground slurs stay whole. Each break moves up to two bars to
+cut the fewest ordines of either voice (Dom 10's tenor runs two bars out of phase, so one voice
+is always cut there). The source's own system and page breaks are dropped.
 
 Options: `--upper-slurs-only` (drop the foreground slurs), `--no-slurs`, `--no-reference` (leave
 the tenor unmarked), `--ligatures` (analyse with ligatures first), `--stacked fundamental pair
@@ -85,8 +94,9 @@ reduction that melodic-reduction could later be fitted to; keep them.
 - MusicXML → verovio → MEI. Colours, stem directions, slurs (`lform="dashed"` for dashed),
   `<dir>` labels and extender brackets are added to the MEI, so verovio places them and breaks
   slurs across systems.
-- MEI notes are matched to the analysed voice in order, skipping tie continuations; letter and
-  octave are checked note by note, and a mismatch stops with its position.
+- MEI notes are matched to the analysed voice in order, skipping tie continuations, and checked
+  letter and octave note by note. If an encoding has dangling ties (Dom 1's tenor, mm. 59–62),
+  the order breaks and notes are matched by onset through verovio's timemap instead.
 - The beam is drawn on the SVG afterwards (MEI has nothing for a beam across non-adjacent notes
   that keep their own rhythm): stems from the fundamental noteheads, one beam per system placed
   two staff spaces above the highest notehead, slur or label over the staff, carried to the system

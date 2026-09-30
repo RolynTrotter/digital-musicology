@@ -27,13 +27,23 @@ def annotated_mei(score_path, graph: Graph, voice_pitches, options=None) -> str:
     if not tk.loadFile(str(score_path)):
         raise ValueError(f'verovio could not read {score_path}')
     root = etree.fromstring(tk.getMEI().encode('utf-8'))
-    annotate_mei(root, graph, voice_pitches)
+    qstamps = {}
+    try:
+        tk.renderToSVG(1)       # the timemap needs a layout
+        for ev in tk.renderToTimemap({'includeMeasures': False, 'includeRests': False}):
+            for nid in ev.get('on', []):
+                qstamps[nid] = float(ev.get('qstamp', 0.0))
+    except Exception:
+        qstamps = {}
+    annotate_mei(root, graph, voice_pitches, qstamps)
     return etree.tostring(root, xml_declaration=True, encoding='UTF-8').decode('utf-8')
 
 
 def render(mei: str, graph: Graph, fundamental_ids, options=None) -> list[str]:
     """Render every page; ``fundamental_ids`` is one beamed line (a list of MEI note ids) or a
     list of such lines (e.g. the fundamental line on the original staff and on a reduction staff)."""
+    if graph.breaks or graph.break_measures:
+        options = {'breaks': 'encoded', **(options or {})}
     tk = _toolkit(options)
     if not tk.loadData(mei):
         raise ValueError('verovio could not load the annotated MEI')
@@ -45,8 +55,14 @@ def render(mei: str, graph: Graph, fundamental_ids, options=None) -> list[str]:
     for p in range(1, tk.getPageCount() + 1):
         svg = tk.renderToSVG(p)
         for l in lefts:
-            if l['ids']:
-                svg = draw_beams(svg, graph, l['ids'], l.get('direction', 'up'), l.get('color'))
+            if l.get('beam', True) is False:
+                svg = draw_stems(svg, graph, l['ids'], l.get('direction', 'up'), l.get('color'), l.get('length', 3.5))
+            elif l['ids']:
+                before = len(l['ids'])
+                svg = draw_beams(svg, graph, l['ids'], l.get('direction', 'up'), l.get('color'),
+                                 started=l.get('started', False))
+                if len(l['ids']) < before:
+                    l['started'] = True
         pages.append(svg)
     return pages
 
@@ -151,7 +167,39 @@ def _control_extent(system, row, x0, x1, direction):
     return out
 
 
-def draw_beams(svg: str, graph: Graph, ids_left: list[str], direction: str = 'up', color: str | None = None) -> str:
+def draw_stems(svg: str, graph: Graph, ids: list[str], direction: str = 'up', color: str | None = None,
+               length: float = 3.5) -> str:
+    """Extra stems (no beam) on the notes ``ids``: ``length`` staff spaces from the notehead."""
+    root = etree.fromstring(svg.encode('utf-8'))
+    by_id = {el.get('id'): el for el in root.iter(f'{{{SVG_NS}}}g') if 'note' in _cls(el)}
+    color = color or graph.colors.get('pedal', '#6b3fa0')
+    hit = False
+    for nid in ids:
+        g = by_id.get(nid)
+        if g is None:
+            continue
+        staff = _ancestor(g, 'staff')
+        geo = _note_geometry(g)
+        sg = _staff_geometry(staff) if staff is not None else None
+        if geo is None or sg is None:
+            continue
+        sp = sg['space']
+        # notehead width from the glyph's own stem if it has one, else about 1.2 spaces
+        w = (geo['stem_x'] - geo['hx']) if geo['stem_x'] is not None and geo['stem_x'] > geo['hx'] else 1.18 * sp
+        x = geo['hx'] + w if direction == 'up' else geo['hx'] + 0.05 * sp
+        y1 = geo['hy'] - length * sp if direction == 'up' else geo['hy'] + length * sp
+        el = etree.SubElement(g.getparent(), f'{{{SVG_NS}}}path')
+        el.set('class', 'schenker-stem')
+        el.set('d', f"M{x:.1f} {geo['hy']:.1f} L{x:.1f} {y1:.1f}")
+        el.set('stroke', color)
+        el.set('style', f'stroke:{color}')
+        el.set('stroke-width', f'{0.12 * sp:.1f}')
+        hit = True
+    return etree.tostring(root, encoding='unicode') if hit else svg
+
+
+def draw_beams(svg: str, graph: Graph, ids_left: list[str], direction: str = 'up', color: str | None = None,
+               started: bool = False) -> str:
     """Draw stems and a beam joining the notes ``ids_left`` found on this page (up: stems up and
     the beam above the staff; down: below). ``ids_left`` is the rest of the line in order; notes
     drawn here are removed from it, so the beam can run on from the previous page and to the
@@ -162,7 +210,7 @@ def draw_beams(svg: str, graph: Graph, ids_left: list[str], direction: str = 'up
     if not on_page:
         return svg
     color = color or graph.colors['fundamental']
-    starts_here = ids_left[0] == on_page[0]
+    starts_here = (not started) and ids_left[0] == on_page[0]
     ends_here = len(on_page) == len(ids_left)
 
     page_systems = [el for el in root.iter(f'{{{SVG_NS}}}g') if 'system' in _cls(el)]

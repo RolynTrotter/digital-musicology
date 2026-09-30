@@ -58,10 +58,11 @@ repository can't be reached, ask for the folder. Don't rewrite the package from 
    - `dependencies`: every note's place in its group: `level`, `parent` (the members of the same
      group it sits between, or leads to / follows), `relation` (PASS, NEI, REP, FILL, INC_L/R,
      NEI_LEAP, EDGE_*). Level-1 dependencies are the reduction inside each ordo.
-   - `modules`: pair labels. Same letter = same duplum (≥ 0.9 similarity); primes = variants
-     (≥ 0.6 like the letter's first pair, or ≥ 0.7 like any member). Each keeps `like` (the most
-     similar earlier pair and the similarity). The labels compare the duplum only, so pairs with the
-     same duplum over a different tenor share a letter (Alex's "ab" pairs in Dom 3 come out as a′).
+   - `modules`: pair labels. The letter comes from the pair's opening (first three pitches of its
+     first ordo, repeats merged, rhythm ignored), as Alex hears modules; primes mark variants, and a
+     pair matching an earlier member as a whole (≥ 0.9) repeats its label; a short final group is
+     `tag`. Dom 3: a a′ a″ b | b′ b″ b‴ | a′ a′ | c a‴ | tag. Each keeps `like` (the most similar
+     earlier pair and the similarity).
    - `reference_voice`: the tenor's notes, groups (following the duplum's pairs and above),
      dependencies and line.
    - `focal_pitches`, `dominant_focal_pitches`: same-pitch prolongations through the tree.

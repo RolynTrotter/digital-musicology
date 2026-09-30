@@ -155,6 +155,12 @@ triangulated with the §2–3 rules inside a virtual frame, so no ordo's reducti
 next. Each group's last member gets `tree.cadence` (1.5), its first `tree.initial` (0.3); the
 piece's first and last notes get `tree.piece_edge` (2) at the top only. The root is the head.
 
+**Module labels.** A pair's letter comes from its opening: the first three pitches of its first
+ordo (repeats merged, rhythm ignored). Pairs that open alike share a letter; a pair that matches an
+earlier member as a whole (≥ 0.9, pitch and rhythm) takes its label, otherwise the next prime. A
+last group much shorter than the rest is the `tag`. Revised after Alex's reading of Dom 3: 25–31
+and 49–55 open C–D–E–F like 33–40, so they are b-family, and 81–87 opens D…E–F, so it is a-family.
+
 **Home, pedal, line.** For each pair of pairs: the home note is its head; the pedal is the pitch
 that recurs most among its ordo heads other than the home pitch (at least twice), marked upper or
 lower; the line is the longest chain of ordo heads, in order, moving by step in one direction into
@@ -179,11 +185,11 @@ mm. 33–56, where it hears C (m. 55) as the arrival and F only as the pedal (4 
 | Pair of pairs | Pairs (labels) | Ordo heads | Home | Pedal |
 | --- | --- | --- | --- | --- |
 | mm. 1–16 | a, a′ | F C F D | D (m. 15) | upper F |
-| 17–32 | a″, a‴ | F B♭ F D | D (m. 31) | upper F |
-| 33–56 | b, b′, a⁗ | F D F F F C | C (m. 55) | upper F |
+| 17–32 | a″, b | F B♭ F D | D (m. 31) | upper F |
+| 33–56 | b′, b″, b‴ | F D F F F C | C (m. 55) | upper F |
 | 57–72 | a′, a′ | F E F D (line F–E–D) | D (m. 71) | upper F |
-| 73–88 | c, d | C D D C | C (m. 87) | upper D |
-| 89–92 (tag) | e | E | E (m. 92) | |
+| 73–88 | c, a‴ | C D D C | C (m. 87) | upper D |
+| 89–92 | tag | E | E (m. 92) | |
 
 Sections: 1–32 (A), 33–56 (B), 57–88, tag; piece head E (m. 92), a fifth over the tenor's A.
 The tenor's line at the pair-of-pairs level: D D D C G C A. The CANDR reading of F 149r gives the

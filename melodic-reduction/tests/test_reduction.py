@@ -111,6 +111,21 @@ def test_tree_pairs_and_home_notes(tmp_path):
     pairs = [m['measures'] for m in a['modules']]
     assert pairs[0] == [1, 7] and pairs[1] == [9, 15]          # pairs of ordines, in phase
     assert all(m['label'] == 'a' for m in a['modules'])         # identical pairs share a label
+
+
+def test_labels_follow_the_opening(tmp_path):
+    # pairs open D-E-F (a) or C-D-E-F (b); the second ordo varies. A pair takes its letter from its
+    # opening, a prime when the rest differs, and the same label when it matches a member whole.
+    o = lambda ps: [(p, 1.5) for p in ps] + [('r', 1.5)]
+    d = (o(['D4', 'E4', 'F4']) + o(['E4', 'C4', 'D4']) +       # a
+         o(['C4', 'D4', 'F4']) + o(['E4', 'D4', 'D4']) +       # b (opens C-D-F: new letter)
+         o(['D4', 'E4', 'F4']) + o(['F4', 'G4', 'E4']) +       # a' (opens like a)
+         o(['D4', 'E4', 'F4']) + o(['E4', 'C4', 'D4']))        # a (same as the first)
+    t = ([('D3', 3.0), ('C3', 1.5), ('r', 1.5)]) * 8
+    path = tmp_path / 'labels.musicxml'
+    make_score(d, t).write('musicxml', fp=str(path))
+    a = mr.analyze(path)
+    assert [m['label'] for m in a['modules']] == ['a', 'b', 'a′', 'a']
     # every pair ends on D, so every pair of pairs is heard as prolonging D
     assert all(sec['home'] == 'D4' for sec in a['sections'])
     assert any(sec['pedal'] and sec['pedal']['pitch'] == 'F4' for sec in a['sections'])

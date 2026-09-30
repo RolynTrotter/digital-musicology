@@ -57,6 +57,7 @@
   },
   "labels": {
     "same": 0.9,
-    "variant": 0.6
+    "opening_same": 0.99,
+    "tag_units": 0.6
   }
 }

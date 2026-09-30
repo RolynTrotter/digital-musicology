@@ -305,36 +305,67 @@ def walk(g: Group):
         yield from walk(c)
 
 
-def label_modules(notes, root: Group, level=2, same=0.9, variant=0.6, member=0.7, ref_notes=None):
-    """Label the groups at ``level`` (pairs) a, a′, b ... by duplum similarity.
+def opening(notes, g: Group, k: int = 4) -> list[int]:
+    """The first ``k`` pitches of a group's first ordo, repeated notes merged, rhythm ignored:
+    the incipit by which a listener (and Alex) recognises a module."""
+    first = g.children[0] if g.children else g
+    out = []
+    for i in range(first.first, first.last + 1):
+        d = notes[i].dnum
+        if not out or out[-1] != d:
+            out.append(d)
+    return out[:k]
 
-    A group takes the label of an earlier group it matches at >= ``same``. Otherwise it joins a
-    family (and gets a new prime) if it is >= ``variant`` like the family's first group or
-    >= ``member`` like any member; otherwise it starts a new letter. The best match and its
-    similarity are kept in ``similar_to`` so the labels can be checked."""
+
+def opening_similarity(a: list[int], b: list[int]) -> float:
+    """Share of the first min(len) incipit pitches that agree, position by position."""
+    n = min(len(a), len(b), 3)
+    if n == 0:
+        return 0.0
+    return sum(1 for x, y in zip(a[:n], b[:n]) if x == y) / n
+
+
+def label_modules(notes, root: Group, level=2, same=0.9, opening_same=0.99, ref_notes=None,
+                  tag_units=0.6, **_):
+    """Label the groups at ``level`` (pairs) a, a′, b ...
+
+    The letter comes from the opening: a pair whose first ordo begins with the same three pitches
+    (repeats merged, rhythm ignored) as a letter's first pair belongs to that letter; otherwise it
+    starts a new letter. Within a letter, a pair that matches an earlier member as a whole
+    (>= ``same`` similarity, pitch and rhythm) takes that member's label; otherwise it gets the
+    next prime. A last group much shorter than the others is labelled 'tag'. ``similar_to`` keeps
+    the closest earlier pair and its similarity so labels can be checked."""
     gs = [g for g in walk(root) if g.level == level]
+    if not gs:
+        return gs
+    lens = [notes[g.last].end - notes[g.first].onset for g in gs]
+    typical = float(np.median(lens))
     labels, proto, primes = [], {}, {}
     for i, g in enumerate(gs):
         sims = [unit_similarity(notes, gs[j], g, ref_notes) for j in range(i)]
         bj = int(np.argmax(sims)) if sims else None
-        best = sims[bj] if sims else 0.0
-        lab = None
-        if bj is not None and best >= same:
-            lab = labels[bj]
+        g.similar_to = (bj, round(float(sims[bj]), 3) if sims else 0.0)
+        if i == len(gs) - 1 and len(gs) > 2 and lens[i] < tag_units * typical:
+            g.label = 'tag'
+            labels.append('tag')
+            continue
+        inc = opening(notes, g)
+        fam = None
+        for letter, pj in proto.items():
+            if opening_similarity(opening(notes, gs[pj]), inc) >= opening_same:
+                fam = letter
+                break
+        if fam is None:
+            lab = chr(ord('a') + len(proto))
+            proto[lab] = i
         else:
-            fam = None
-            for letter, pj in proto.items():
-                if sims[pj] >= variant:
-                    fam = letter if fam is None or sims[pj] > sims[proto[fam]] else fam
-            if fam is None and bj is not None and best >= member:
-                fam = labels[bj].rstrip('′')
-            if fam is not None:
+            members = [j for j in range(i) if labels[j].rstrip('′') == fam]
+            match = [j for j in members if sims[j] >= same]
+            if match:
+                lab = labels[max(match, key=lambda j: sims[j])]
+            else:
                 primes[fam] = primes.get(fam, 0) + 1
                 lab = fam + '′' * primes[fam]
-            else:
-                lab = chr(ord('a') + len(proto))
-                proto[lab] = i
         labels.append(lab)
         g.label = lab
-        g.similar_to = (bj, round(float(best), 3))
     return gs

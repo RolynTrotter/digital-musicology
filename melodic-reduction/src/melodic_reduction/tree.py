@@ -135,6 +135,9 @@ def section_summary(notes, root: Group, level: int, ordo_level=1) -> list[dict]:
                     'line': line,
                     'home': home, 'home_measure': notes[g.head].measure,
                     'ordo_head_line': [f'{notes[k].pitch}@m{notes[k].measure}' for k in ordo_heads],
+                    'ordo_heads': list(ordo_heads), 'head': g.head,
+                    'pedal_notes': ([k for k in ordo_heads if notes[k].pitch == pedal['pitch']]
+                                    if pedal else []),
                     'member_heads': [f'{notes[c.head].pitch}@m{notes[c.head].measure}' for c in g.children],
                     'pedal': pedal, 'labels': [c.label for c in g.children if c.label]})
     return out

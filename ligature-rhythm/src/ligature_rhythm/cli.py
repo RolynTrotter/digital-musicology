@@ -78,7 +78,7 @@ def cmd_train(args):
 
 def cmd_cv(args):
     from .train import cross_validate
-    df = cross_validate(_bench(args), epochs=args.epochs, workers=args.workers, c_pa=args.c_pa)
+    df = cross_validate(_bench(args), epochs=args.epochs, workers=args.workers, c_pa=args.c_pa, k=args.folds)
     print(df.round(3).to_string())
     print('\nmean:\n' + df.select_dtypes('number').mean().round(3).to_string())
     if args.csv:
@@ -130,6 +130,7 @@ def main(argv=None):
             s.add_argument('--out', default='weights.json')
         if name == 'cv':
             s.add_argument('--workers', type=int)
+            s.add_argument('--folds', type=int, help='merge the groups into this many folds (default: leave one group out)')
             s.add_argument('--csv')
 
     args = p.parse_args(argv)

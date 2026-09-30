@@ -169,7 +169,8 @@ class Benchmark:
         if run not in self._cache:
             r = self.spec['runs'][run]
             paths = [self.candr_dir / f'setting_{i:04d}.mei' for i in r['settings']]
-            self._cache[run] = tuple(split(paths, incipit=r.get('incipit'))[0])
+            kw = {k: r[k] for k in ('min_gap',) if k in r}
+            self._cache[run] = tuple(split(paths, incipit=r.get('incipit'), **kw)[0])
         return self._cache[run]
 
     def clausula_for(self, piece):

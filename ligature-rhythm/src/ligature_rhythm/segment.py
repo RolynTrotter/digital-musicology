@@ -40,14 +40,24 @@ def _letters(tokens) -> list:
 
 def chain(paths: Sequence) -> tuple:
     """Concatenate consecutive settings voice by voice -> ([(setting index, token)], [...]).
-    A setting whose upper voice repeats the previous one (a CANDR double entry) is skipped."""
-    up, te, prev = [], [], None
+    A setting whose upper voice repeats the previous one is a CANDR double entry of the same system
+    (e.g. F f.147r system V is catalogued three times, once per clausula on it, with tenors of
+    different extent): of the copies, the one with the most tenor notes is kept."""
+    up, te, prev, prev_si = [], [], None, None
     for si, p in enumerate(paths):
         u, t = upper_and_tenor(p)
         if prev is not None and _letters(u) == prev:
-            log.info('%s repeats the previous upper voice; skipped as a duplicate entry', p)
+            old_n = sum(len(notes_of(x)) for s2, x in te if s2 == prev_si)
+            new_n = sum(len(notes_of(x)) for x in t)
+            if new_n > old_n:
+                log.info('%s repeats the previous upper voice with a fuller tenor; it replaces it', p)
+                up = [(si if s2 == prev_si else s2, x) for s2, x in up]
+                te = [(s2, x) for s2, x in te if s2 != prev_si] + [(si, x) for x in t]
+                prev_si = si
+            else:
+                log.info('%s repeats the previous upper voice; skipped as a duplicate entry', p)
             continue
-        prev = _letters(u)
+        prev, prev_si = _letters(u), si
         up += [(si, x) for x in u]
         te += [(si, x) for x in t]
     return up, te

@@ -269,27 +269,56 @@ def value_accuracy(examples, model: Model) -> list:
     return rows
 
 
+def _example(args):
+    piece, bench = args
+    try:
+        return build_example(piece, bench)
+    except Exception as e:                      # a piece the reader cannot label is left out
+        log.warning('%s: no training example (%s)', piece, e)
+        return None
+
+
 def _fold(args):
-    bench, held_out, epochs, c_pa = args
-    train = [build_example(p, bench) for p in bench.pieces
-             if p not in held_out and p not in bench.spec.get('exclude_from_training', [])]
-    test = [build_example(p, bench) for p in held_out]
+    bench, held_out, epochs, c_pa, examples = args
+    if examples is None:
+        examples = {p: build_example(p, bench) for p in bench.pieces}
+    excl = set(bench.spec.get('exclude_from_training', []))
+    train = [ex for p, ex in examples.items() if ex is not None and p not in held_out and p not in excl]
+    test = [examples[p] for p in held_out if examples.get(p) is not None]
     model = fit(train, epochs=epochs, c_pa=c_pa)
     rows = value_accuracy(test, model)
-    df = bench.evaluate(model, held_out)
+    df = bench.evaluate(model, [ex.piece for ex in test])
     for r in rows:
         r.update(df.loc[r['piece']].to_dict())
     return rows
 
 
+def kfold_groups(groups: list, k: int, seed: int = 0) -> list:
+    """merge groups into k folds of similar size (groups are never split)"""
+    rnd = random.Random(seed)
+    groups = list(groups)
+    rnd.shuffle(groups)
+    folds = [[] for _ in range(k)]
+    for g in sorted(groups, key=len, reverse=True):
+        min(folds, key=len).extend(g)
+    return [f for f in folds if f]
+
+
 def cross_validate(bench: Benchmark, groups: Optional[list] = None, epochs: int = EPOCHS,
-                   workers: Optional[int] = None, c_pa: float = C_PA):
-    """Leave-one-group-out estimate, folds run in parallel. Pieces that are the same clausula (or
-    share material) should be in one group (spec key "groups")."""
+                   workers: Optional[int] = None, c_pa: float = C_PA, k: Optional[int] = None,
+                   examples: Optional[dict] = None):
+    """Held-out estimate, folds run in parallel. Pieces that are the same clausula (or share
+    material) should be in one group (spec key "groups"). Leave-one-group-out by default; with
+    ``k``, the groups are merged into k folds (for benchmarks with many pieces). Examples are built
+    once, in parallel, and shared by the folds."""
     import pandas as pd
     groups = groups or bench.spec.get('groups') or [[p] for p in bench.pieces]
+    if k:
+        groups = kfold_groups(groups, k)
     with ProcessPoolExecutor(max_workers=workers) as pool:
-        results = list(pool.map(_fold, [(bench, g, epochs, c_pa) for g in groups]))
+        if examples is None:
+            examples = dict(zip(bench.pieces, pool.map(_example, [(p, bench) for p in bench.pieces])))
+        results = list(pool.map(_fold, [(bench, g, epochs, c_pa, examples) for g in groups]))
     return pd.DataFrame([r for rows in results for r in rows]).set_index('piece')
 
 

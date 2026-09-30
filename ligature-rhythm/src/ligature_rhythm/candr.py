@@ -9,6 +9,7 @@ This module parses that MEI into plain Python objects and downloads settings pol
 from __future__ import annotations
 
 import csv
+import logging
 import html
 import os
 import random
@@ -91,6 +92,14 @@ def _note(e) -> Note:
                 synch=_synch(e))
 
 
+def _complete(e, path) -> bool:
+    """a few CANDR notes lack a pitch name or octave; they are dropped with a warning"""
+    ok = bool((_attr(e, 'pname') or '').strip()) and (_attr(e, 'oct') or '').strip().lstrip('-').isdigit()
+    if not ok:
+        logging.getLogger(__name__).warning('%s: note %s has no pitch/octave; skipped', path, e.get(XML_ID))
+    return ok
+
+
 def parse_mei(path: Union[str, Path]) -> dict:
     """Parse one CANDR setting. Returns {staff number: [tokens]} (staff '1' = upper voice)."""
     root = ET.parse(path).getroot()
@@ -101,9 +110,12 @@ def parse_mei(path: Union[str, Path]) -> dict:
             for e in layer:
                 tag = e.tag.replace(MEI, '')
                 if tag == 'ligature':
-                    toks.append(Ligature(_attr(e, 'type'), [_note(x) for x in e.findall(MEI + 'note')]))
+                    ns = [_note(x) for x in e.findall(MEI + 'note') if _complete(x, path)]
+                    if ns:
+                        toks.append(Ligature(_attr(e, 'type'), ns))
                 elif tag == 'note':
-                    toks.append(_note(e))
+                    if _complete(e, path):
+                        toks.append(_note(e))
                 elif tag == 'divisione':
                     toks.append(Stroke(float(_attr(e, 'len') or 0), e.get(XML_ID), _synch(e)))
                 elif tag in ('pb', 'sb'):

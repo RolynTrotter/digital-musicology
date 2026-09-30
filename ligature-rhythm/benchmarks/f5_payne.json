@@ -1,0 +1,2291 @@
+{
+ "description": "Payne, F fasc. 5 clausulae a2 (DIAMM 2026), matched to CANDR settings; editions read from the vector PDF, only sections whose two staves agree note-for-note in time",
+ "runs": {
+  "F:841-852:FFFEDEEGAD:9": {
+   "settings": [
+    841,
+    842,
+    843,
+    844,
+    847,
+    845,
+    846,
+    848,
+    849,
+    850,
+    851,
+    852
+   ],
+   "incipit": "FFFEDEEGAD",
+   "min_gap": 9
+  },
+  "F:841-852:FFFEDEEGAD:8": {
+   "settings": [
+    841,
+    842,
+    843,
+    844,
+    847,
+    845,
+    846,
+    848,
+    849,
+    850,
+    851,
+    852
+   ],
+   "incipit": "FFFEDEEGAD",
+   "min_gap": 8
+  },
+  "F:841-852:DFAFGEDE:6": {
+   "settings": [
+    841,
+    842,
+    843,
+    844,
+    847,
+    845,
+    846,
+    848,
+    849,
+    850,
+    851,
+    852
+   ],
+   "incipit": "DFAFGEDE",
+   "min_gap": 6
+  },
+  "F:841-852:DFAFGEDEC:7": {
+   "settings": [
+    841,
+    842,
+    843,
+    844,
+    847,
+    845,
+    846,
+    848,
+    849,
+    850,
+    851,
+    852
+   ],
+   "incipit": "DFAFGEDEC",
+   "min_gap": 7
+  },
+  "F:841-852:ACAGFGA:5": {
+   "settings": [
+    841,
+    842,
+    843,
+    844,
+    847,
+    845,
+    846,
+    848,
+    849,
+    850,
+    851,
+    852
+   ],
+   "incipit": "ACAGFGA",
+   "min_gap": 5
+  },
+  "F:841-852:ACAGFG:4": {
+   "settings": [
+    841,
+    842,
+    843,
+    844,
+    847,
+    845,
+    846,
+    848,
+    849,
+    850,
+    851,
+    852
+   ],
+   "incipit": "ACAGFG",
+   "min_gap": 4
+  },
+  "F:841-856:ABCAGABGFG:79": {
+   "settings": [
+    841,
+    842,
+    843,
+    844,
+    847,
+    845,
+    846,
+    848,
+    849,
+    850,
+    851,
+    852,
+    853,
+    854,
+    855,
+    856
+   ],
+   "incipit": "ABCAGABGFG",
+   "min_gap": 79
+  },
+  "F:841-856:ABCAGABGFG:40": {
+   "settings": [
+    841,
+    842,
+    843,
+    844,
+    847,
+    845,
+    846,
+    848,
+    849,
+    850,
+    851,
+    852,
+    853,
+    854,
+    855,
+    856
+   ],
+   "incipit": "ABCAGABGFG",
+   "min_gap": 40
+  },
+  "F:841-856:ABCAGABGFG:39": {
+   "settings": [
+    841,
+    842,
+    843,
+    844,
+    847,
+    845,
+    846,
+    848,
+    849,
+    850,
+    851,
+    852,
+    853,
+    854,
+    855,
+    856
+   ],
+   "incipit": "ABCAGABGFG",
+   "min_gap": 39
+  },
+  "F:848-862:ABCAGABGFG:83": {
+   "settings": [
+    848,
+    849,
+    850,
+    851,
+    852,
+    853,
+    854,
+    855,
+    856,
+    857,
+    858,
+    859,
+    860,
+    861,
+    862
+   ],
+   "incipit": "ABCAGABGFG",
+   "min_gap": 83
+  },
+  "F:848-862:ABCAGABGFG:36": {
+   "settings": [
+    848,
+    849,
+    850,
+    851,
+    852,
+    853,
+    854,
+    855,
+    856,
+    857,
+    858,
+    859,
+    860,
+    861,
+    862
+   ],
+   "incipit": "ABCAGABGFG",
+   "min_gap": 36
+  },
+  "F:848-862:ABCAGABGFG:38": {
+   "settings": [
+    848,
+    849,
+    850,
+    851,
+    852,
+    853,
+    854,
+    855,
+    856,
+    857,
+    858,
+    859,
+    860,
+    861,
+    862
+   ],
+   "incipit": "ABCAGABGFG",
+   "min_gap": 38
+  },
+  "F:848-862:ABCAGABGFG:41": {
+   "settings": [
+    848,
+    849,
+    850,
+    851,
+    852,
+    853,
+    854,
+    855,
+    856,
+    857,
+    858,
+    859,
+    860,
+    861,
+    862
+   ],
+   "incipit": "ABCAGABGFG",
+   "min_gap": 41
+  },
+  "F:853-866:ABCAGABGFG:68": {
+   "settings": [
+    853,
+    854,
+    855,
+    856,
+    857,
+    858,
+    859,
+    860,
+    861,
+    862,
+    863,
+    864,
+    865,
+    866
+   ],
+   "incipit": "ABCAGABGFG",
+   "min_gap": 68
+  },
+  "F:853-866:CDCACCCCED:8": {
+   "settings": [
+    853,
+    854,
+    855,
+    856,
+    857,
+    858,
+    859,
+    860,
+    861,
+    862,
+    863,
+    864,
+    865,
+    866
+   ],
+   "incipit": "CDCACCCCED",
+   "min_gap": 8
+  },
+  "W1:782-778:CDCACCED:6": {
+   "settings": [
+    782,
+    781,
+    780,
+    779,
+    777,
+    778
+   ],
+   "incipit": "CDCACCED",
+   "min_gap": 6
+  },
+  "F:853-866:CDCACCCED:7": {
+   "settings": [
+    853,
+    854,
+    855,
+    856,
+    857,
+    858,
+    859,
+    860,
+    861,
+    862,
+    863,
+    864,
+    865,
+    866
+   ],
+   "incipit": "CDCACCCED",
+   "min_gap": 7
+  },
+  "F:857-871:CDCACCCCED:49": {
+   "settings": [
+    857,
+    858,
+    859,
+    860,
+    861,
+    862,
+    863,
+    864,
+    865,
+    866,
+    867,
+    868,
+    869,
+    870,
+    871
+   ],
+   "incipit": "CDCACCCCED",
+   "min_gap": 49
+  },
+  "F:857-871:DCCACDCBCD:53": {
+   "settings": [
+    857,
+    858,
+    859,
+    860,
+    861,
+    862,
+    863,
+    864,
+    865,
+    866,
+    867,
+    868,
+    869,
+    870,
+    871
+   ],
+   "incipit": "DCCACDCBCD",
+   "min_gap": 53
+  },
+  "F:857-871:DCCACDCBCD:55": {
+   "settings": [
+    857,
+    858,
+    859,
+    860,
+    861,
+    862,
+    863,
+    864,
+    865,
+    866,
+    867,
+    868,
+    869,
+    870,
+    871
+   ],
+   "incipit": "DCCACDCBCD",
+   "min_gap": 55
+  },
+  "F:863-874:DCCACDCBCD:56": {
+   "settings": [
+    863,
+    864,
+    865,
+    866,
+    867,
+    868,
+    869,
+    870,
+    871,
+    872,
+    873,
+    874
+   ],
+   "incipit": "DCCACDCBCD",
+   "min_gap": 56
+  },
+  "F:863-874:DCCACDCBCD:52": {
+   "settings": [
+    863,
+    864,
+    865,
+    866,
+    867,
+    868,
+    869,
+    870,
+    871,
+    872,
+    873,
+    874
+   ],
+   "incipit": "DCCACDCBCD",
+   "min_gap": 52
+  },
+  "F:863-874:DCCACDCBCD:54": {
+   "settings": [
+    863,
+    864,
+    865,
+    866,
+    867,
+    868,
+    869,
+    870,
+    871,
+    872,
+    873,
+    874
+   ],
+   "incipit": "DCCACDCBCD",
+   "min_gap": 54
+  },
+  "F:863-874:DCCACDCBCD:53": {
+   "settings": [
+    863,
+    864,
+    865,
+    866,
+    867,
+    868,
+    869,
+    870,
+    871,
+    872,
+    873,
+    874
+   ],
+   "incipit": "DCCACDCBCD",
+   "min_gap": 53
+  },
+  "F:863-874:DCCACDCBCD:51": {
+   "settings": [
+    863,
+    864,
+    865,
+    866,
+    867,
+    868,
+    869,
+    870,
+    871,
+    872,
+    873,
+    874
+   ],
+   "incipit": "DCCACDCBCD",
+   "min_gap": 51
+  },
+  "F:867-877:DCCACDCBCD:109": {
+   "settings": [
+    867,
+    868,
+    869,
+    870,
+    871,
+    872,
+    873,
+    874,
+    875,
+    876,
+    877
+   ],
+   "incipit": "DCCACDCBCD",
+   "min_gap": 109
+  },
+  "F:867-877:DCCACDCBCD:53": {
+   "settings": [
+    867,
+    868,
+    869,
+    870,
+    871,
+    872,
+    873,
+    874,
+    875,
+    876,
+    877
+   ],
+   "incipit": "DCCACDCBCD",
+   "min_gap": 53
+  },
+  "F:867-877:DCCACDCBCD:91": {
+   "settings": [
+    867,
+    868,
+    869,
+    870,
+    871,
+    872,
+    873,
+    874,
+    875,
+    876,
+    877
+   ],
+   "incipit": "DCCACDCBCD",
+   "min_gap": 91
+  },
+  "F:872-883:DDFFGAFDGF:19": {
+   "settings": [
+    872,
+    873,
+    874,
+    875,
+    876,
+    877,
+    878,
+    879,
+    880,
+    881,
+    882,
+    883
+   ],
+   "incipit": "DDFFGAFDGF",
+   "min_gap": 19
+  },
+  "F:875-886:DDFFGAFDGF:19": {
+   "settings": [
+    875,
+    876,
+    877,
+    878,
+    879,
+    880,
+    881,
+    882,
+    883,
+    884,
+    885,
+    886
+   ],
+   "incipit": "DDFFGAFDGF",
+   "min_gap": 19
+  },
+  "F:875-886:CCCACDECDE:39": {
+   "settings": [
+    875,
+    876,
+    877,
+    878,
+    879,
+    880,
+    881,
+    882,
+    883,
+    884,
+    885,
+    886
+   ],
+   "incipit": "CCCACDECDE",
+   "min_gap": 39
+  },
+  "F:875-886:CCCACDECDE:38": {
+   "settings": [
+    875,
+    876,
+    877,
+    878,
+    879,
+    880,
+    881,
+    882,
+    883,
+    884,
+    885,
+    886
+   ],
+   "incipit": "CCCACDECDE",
+   "min_gap": 38
+  },
+  "F:875-886:CCDCCGCDCD:34": {
+   "settings": [
+    875,
+    876,
+    877,
+    878,
+    879,
+    880,
+    881,
+    882,
+    883,
+    884,
+    885,
+    886
+   ],
+   "incipit": "CCDCCGCDCD",
+   "min_gap": 34
+  },
+  "F:878-891:CCDCCGCDCD:34": {
+   "settings": [
+    878,
+    879,
+    880,
+    881,
+    882,
+    883,
+    884,
+    885,
+    886,
+    887,
+    888,
+    889,
+    890,
+    891
+   ],
+   "incipit": "CCDCCGCDCD",
+   "min_gap": 34
+  },
+  "F:878-891:CCCACDECDE:39": {
+   "settings": [
+    878,
+    879,
+    880,
+    881,
+    882,
+    883,
+    884,
+    885,
+    886,
+    887,
+    888,
+    889,
+    890,
+    891
+   ],
+   "incipit": "CCCACDECDE",
+   "min_gap": 39
+  },
+  "F:884-899:CCCACDECDE:39": {
+   "settings": [
+    884,
+    885,
+    886,
+    887,
+    888,
+    889,
+    890,
+    891,
+    892,
+    893,
+    894,
+    895,
+    896,
+    898,
+    899
+   ],
+   "incipit": "CCCACDECDE",
+   "min_gap": 39
+  },
+  "F:884-899:CCDCCGCDC:7": {
+   "settings": [
+    884,
+    885,
+    886,
+    887,
+    888,
+    889,
+    890,
+    891,
+    892,
+    893,
+    894,
+    895,
+    896,
+    898,
+    899
+   ],
+   "incipit": "CCDCCGCDC",
+   "min_gap": 7
+  },
+  "F:884-899:ACDDCEFDCC:17": {
+   "settings": [
+    884,
+    885,
+    886,
+    887,
+    888,
+    889,
+    890,
+    891,
+    892,
+    893,
+    894,
+    895,
+    896,
+    898,
+    899
+   ],
+   "incipit": "ACDDCEFDCC",
+   "min_gap": 17
+  },
+  "F:887-903:DDCDDCDACD:16": {
+   "settings": [
+    887,
+    888,
+    889,
+    890,
+    891,
+    892,
+    893,
+    894,
+    895,
+    896,
+    898,
+    899,
+    900,
+    901,
+    902,
+    903
+   ],
+   "incipit": "DDCDDCDACD",
+   "min_gap": 16
+  },
+  "F:887-903:DDFFGAFDGF:20": {
+   "settings": [
+    887,
+    888,
+    889,
+    890,
+    891,
+    892,
+    893,
+    894,
+    895,
+    896,
+    898,
+    899,
+    900,
+    901,
+    902,
+    903
+   ],
+   "incipit": "DDFFGAFDGF",
+   "min_gap": 20
+  },
+  "F:887-903:FGAGACDCBC:11": {
+   "settings": [
+    887,
+    888,
+    889,
+    890,
+    891,
+    892,
+    893,
+    894,
+    895,
+    896,
+    898,
+    899,
+    900,
+    901,
+    902,
+    903
+   ],
+   "incipit": "FGAGACDCBC",
+   "min_gap": 11
+  },
+  "F:887-903:CCACDCBCDA:26": {
+   "settings": [
+    887,
+    888,
+    889,
+    890,
+    891,
+    892,
+    893,
+    894,
+    895,
+    896,
+    898,
+    899,
+    900,
+    901,
+    902,
+    903
+   ],
+   "incipit": "CCACDCBCDA",
+   "min_gap": 26
+  },
+  "F:887-903:FFFFAFAGFA:43": {
+   "settings": [
+    887,
+    888,
+    889,
+    890,
+    891,
+    892,
+    893,
+    894,
+    895,
+    896,
+    898,
+    899,
+    900,
+    901,
+    902,
+    903
+   ],
+   "incipit": "FFFFAFAGFA",
+   "min_gap": 43
+  },
+  "F:887-903:AFAGFAFGAC:17": {
+   "settings": [
+    887,
+    888,
+    889,
+    890,
+    891,
+    892,
+    893,
+    894,
+    895,
+    896,
+    898,
+    899,
+    900,
+    901,
+    902,
+    903
+   ],
+   "incipit": "AFAGFAFGAC",
+   "min_gap": 17
+  },
+  "F:892-907:AFGACCDFDC:11": {
+   "settings": [
+    892,
+    893,
+    894,
+    895,
+    896,
+    898,
+    899,
+    900,
+    901,
+    902,
+    903,
+    904,
+    905,
+    906,
+    907
+   ],
+   "incipit": "AFGACCDFDC",
+   "min_gap": 11
+  },
+  "F:892-907:DFDDDFFGAF:23": {
+   "settings": [
+    892,
+    893,
+    894,
+    895,
+    896,
+    898,
+    899,
+    900,
+    901,
+    902,
+    903,
+    904,
+    905,
+    906,
+    907
+   ],
+   "incipit": "DFDDDFFGAF",
+   "min_gap": 23
+  },
+  "F:900-909:DCDCECACBD:40": {
+   "settings": [
+    900,
+    901,
+    902,
+    903,
+    904,
+    905,
+    906,
+    907,
+    908,
+    909
+   ],
+   "incipit": "DCDCECACBD",
+   "min_gap": 40
+  },
+  "F:900-909:CDFFCDDCCA:46": {
+   "settings": [
+    900,
+    901,
+    902,
+    903,
+    904,
+    905,
+    906,
+    907,
+    908,
+    909
+   ],
+   "incipit": "CDFFCDDCCA",
+   "min_gap": 46
+  },
+  "F:904-912:CDFFCDDCCC:48": {
+   "settings": [
+    904,
+    905,
+    906,
+    907,
+    908,
+    909,
+    910,
+    911,
+    912
+   ],
+   "incipit": "CDFFCDDCCC",
+   "min_gap": 48
+  },
+  "F:904-912:CDFFCDDCCA:90": {
+   "settings": [
+    904,
+    905,
+    906,
+    907,
+    908,
+    909,
+    910,
+    911,
+    912
+   ],
+   "incipit": "CDFFCDDCCA",
+   "min_gap": 90
+  },
+  "F:908-915:FGACDFFCDD:54": {
+   "settings": [
+    908,
+    909,
+    910,
+    911,
+    912,
+    913,
+    914,
+    915
+   ],
+   "incipit": "FGACDFFCDD",
+   "min_gap": 54
+  },
+  "F:908-915:FGACDFFCDD:50": {
+   "settings": [
+    908,
+    909,
+    910,
+    911,
+    912,
+    913,
+    914,
+    915
+   ],
+   "incipit": "FGACDFFCDD",
+   "min_gap": 50
+  },
+  "F:908-915:AGBAGAFACC:16": {
+   "settings": [
+    908,
+    909,
+    910,
+    911,
+    912,
+    913,
+    914,
+    915
+   ],
+   "incipit": "AGBAGAFACC",
+   "min_gap": 16
+  },
+  "F:910-915:BAGAFACCCC:30": {
+   "settings": [
+    910,
+    911,
+    912,
+    913,
+    914,
+    915
+   ],
+   "incipit": "BAGAFACCCC",
+   "min_gap": 30
+  },
+  "F:910-915:AGBAGAFACC:14": {
+   "settings": [
+    910,
+    911,
+    912,
+    913,
+    914,
+    915
+   ],
+   "incipit": "AGBAGAFACC",
+   "min_gap": 14
+  },
+  "W1:734-729:DCDEFDCCDE:94": {
+   "settings": [
+    734,
+    733,
+    732,
+    731,
+    730,
+    729
+   ],
+   "incipit": "DCDEFDCCDE",
+   "min_gap": 94
+  },
+  "W1:734-729:CCBCDECBCC:32": {
+   "settings": [
+    734,
+    733,
+    732,
+    731,
+    730,
+    729
+   ],
+   "incipit": "CCBCDECBCC",
+   "min_gap": 32
+  },
+  "W1:734-729:CCBCDECBCC:31": {
+   "settings": [
+    734,
+    733,
+    732,
+    731,
+    730,
+    729
+   ],
+   "incipit": "CCBCDECBCC",
+   "min_gap": 31
+  },
+  "W1:731-726:GAGAGAGAEF:42": {
+   "settings": [
+    731,
+    730,
+    729,
+    728,
+    727,
+    726
+   ],
+   "incipit": "GAGAGAGAEF",
+   "min_gap": 42
+  },
+  "W1:728-722:DCBCBABBBG:85": {
+   "settings": [
+    728,
+    727,
+    726,
+    725,
+    724,
+    722
+   ],
+   "incipit": "DCBCBABBBG",
+   "min_gap": 85
+  },
+  "W1:728-722:CBCBABBGCD:48": {
+   "settings": [
+    728,
+    727,
+    726,
+    725,
+    724,
+    722
+   ],
+   "incipit": "CBCBABBGCD",
+   "min_gap": 48
+  },
+  "W1:728-722:CBCBABBGCD:51": {
+   "settings": [
+    728,
+    727,
+    726,
+    725,
+    724,
+    722
+   ],
+   "incipit": "CBCBABBGCD",
+   "min_gap": 51
+  },
+  "W1:725-720:DABAGCCBGA:32": {
+   "settings": [
+    725,
+    724,
+    722,
+    723,
+    721,
+    720
+   ],
+   "incipit": "DABAGCCBGA",
+   "min_gap": 32
+  },
+  "W1:725-720:CFGBBBBBAF:40": {
+   "settings": [
+    725,
+    724,
+    722,
+    723,
+    721,
+    720
+   ],
+   "incipit": "CFGBBBBBAF",
+   "min_gap": 40
+  },
+  "W1:725-720:CFGBBBBBAF:39": {
+   "settings": [
+    725,
+    724,
+    722,
+    723,
+    721,
+    720
+   ],
+   "incipit": "CFGBBBBBAF",
+   "min_gap": 39
+  },
+  "W1:723-717:CGGFGABGGF:37": {
+   "settings": [
+    723,
+    721,
+    720,
+    719,
+    718,
+    717
+   ],
+   "incipit": "CGGFGABGGF",
+   "min_gap": 37
+  },
+  "W1:758-753:FGGFGFEFED:63": {
+   "settings": [
+    758,
+    757,
+    756,
+    755,
+    754,
+    753
+   ],
+   "incipit": "FGGFGFEFED",
+   "min_gap": 63
+  },
+  "W1:758-753:ACAAGAGEFG:44": {
+   "settings": [
+    758,
+    757,
+    756,
+    755,
+    754,
+    753
+   ],
+   "incipit": "ACAAGAGEFG",
+   "min_gap": 44
+  },
+  "W1:761-756:DDAACCABGG:93": {
+   "settings": [
+    761,
+    760,
+    759,
+    758,
+    757,
+    756
+   ],
+   "incipit": "DDAACCABGG",
+   "min_gap": 93
+  },
+  "W1:719-714:DAABAGAGFE:42": {
+   "settings": [
+    719,
+    718,
+    717,
+    716,
+    715,
+    714
+   ],
+   "incipit": "DAABAGAGFE",
+   "min_gap": 42
+  },
+  "W1:716-711:AGAEFGEGBA:28": {
+   "settings": [
+    716,
+    715,
+    714,
+    713,
+    712,
+    711
+   ],
+   "incipit": "AGAEFGEGBA",
+   "min_gap": 28
+  },
+  "W1:710-705:GBGAAGFAAG:34": {
+   "settings": [
+    710,
+    709,
+    708,
+    707,
+    706,
+    705
+   ],
+   "incipit": "GBGAAGFAAG",
+   "min_gap": 34
+  },
+  "W1:707-702:CEFGGAEFGG:40": {
+   "settings": [
+    707,
+    706,
+    705,
+    704,
+    703,
+    702
+   ],
+   "incipit": "CEFGGAEFGG",
+   "min_gap": 40
+  },
+  "W1:707-702:CEFGGAEFGG:38": {
+   "settings": [
+    707,
+    706,
+    705,
+    704,
+    703,
+    702
+   ],
+   "incipit": "CEFGGAEFGG",
+   "min_gap": 38
+  },
+  "W1:755-750:CEFGGAEFGG:38": {
+   "settings": [
+    755,
+    754,
+    753,
+    752,
+    751,
+    750
+   ],
+   "incipit": "CEFGGAEFGG",
+   "min_gap": 38
+  },
+  "W1:704-699:ACDCDCDAFA:40": {
+   "settings": [
+    704,
+    703,
+    702,
+    701,
+    700,
+    699
+   ],
+   "incipit": "ACDCDCDAFA",
+   "min_gap": 40
+  },
+  "W1:704-699:ACDCDCDAFA:39": {
+   "settings": [
+    704,
+    703,
+    702,
+    701,
+    700,
+    699
+   ],
+   "incipit": "ACDCDCDAFA",
+   "min_gap": 39
+  },
+  "W1:692-688:DFDEFGEFED:67": {
+   "settings": [
+    692,
+    691,
+    690,
+    689,
+    687,
+    688
+   ],
+   "incipit": "DFDEFGEFED",
+   "min_gap": 67
+  },
+  "W1:692-688:CDCCACDCDC:33": {
+   "settings": [
+    692,
+    691,
+    690,
+    689,
+    687,
+    688
+   ],
+   "incipit": "CDCCACDCDC",
+   "min_gap": 33
+  },
+  "W1:689-684:CCCDCDECDC:28": {
+   "settings": [
+    689,
+    687,
+    688,
+    686,
+    685,
+    684
+   ],
+   "incipit": "CCCDCDECDC",
+   "min_gap": 28
+  },
+  "W1:689-684:CCCDCDECDC:27": {
+   "settings": [
+    689,
+    687,
+    688,
+    686,
+    685,
+    684
+   ],
+   "incipit": "CCCDCDECDC",
+   "min_gap": 27
+  },
+  "W1:794-789:CCCDCDECDC:26": {
+   "settings": [
+    794,
+    793,
+    792,
+    791,
+    790,
+    789
+   ],
+   "incipit": "CCCDCDECDC",
+   "min_gap": 26
+  },
+  "W1:686-681:CDAGAFACCB:12": {
+   "settings": [
+    686,
+    685,
+    684,
+    683,
+    682,
+    681
+   ],
+   "incipit": "CDAGAFACCB",
+   "min_gap": 12
+  },
+  "W1:686-681:FACEDEDDCD:18": {
+   "settings": [
+    686,
+    685,
+    684,
+    683,
+    682,
+    681
+   ],
+   "incipit": "FACEDEDDCD",
+   "min_gap": 18
+  },
+  "W1:698-694:AGAEFGEGBA:28": {
+   "settings": [
+    698,
+    697,
+    696,
+    695,
+    693,
+    694
+   ],
+   "incipit": "AGAEFGEGBA",
+   "min_gap": 28
+  },
+  "W1:807-802:DDFDEFGEFE:21": {
+   "settings": [
+    807,
+    806,
+    805,
+    804,
+    803,
+    802
+   ],
+   "incipit": "DDFDEFGEFE",
+   "min_gap": 21
+  },
+  "W1:761-756:DEDC:4": {
+   "settings": [
+    761,
+    760,
+    759,
+    758,
+    757,
+    756
+   ],
+   "incipit": "DEDC",
+   "min_gap": 4
+  },
+  "W1:740-735:AGCDC:4": {
+   "settings": [
+    740,
+    739,
+    737,
+    738,
+    736,
+    735
+   ],
+   "incipit": "AGCDC",
+   "min_gap": 4
+  },
+  "W1:716-711:GFEFD:4": {
+   "settings": [
+    716,
+    715,
+    714,
+    713,
+    712,
+    711
+   ],
+   "incipit": "GFEFD",
+   "min_gap": 4
+  },
+  "W1:797-792:GEFD:4": {
+   "settings": [
+    797,
+    796,
+    795,
+    794,
+    793,
+    792
+   ],
+   "incipit": "GEFD",
+   "min_gap": 4
+  },
+  "W1:791-786:FGACDFFCDD:48": {
+   "settings": [
+    791,
+    790,
+    789,
+    788,
+    787,
+    786
+   ],
+   "incipit": "FGACDFFCDD",
+   "min_gap": 48
+  }
+ },
+ "pieces": {
+  "F5_001": {
+   "edition": "F5_001.xml",
+   "run": "F:841-852:FFFEDEEGAD:9"
+  },
+  "F5_002": {
+   "edition": "F5_002.xml",
+   "run": "F:841-852:FFFEDEEGAD:9"
+  },
+  "F5_003": {
+   "edition": "F5_003.xml",
+   "run": "F:841-852:FFFEDEEGAD:8"
+  },
+  "F5_004": {
+   "edition": "F5_004.xml",
+   "run": "F:841-852:DFAFGEDE:6"
+  },
+  "F5_005": {
+   "edition": "F5_005.xml",
+   "run": "F:841-852:DFAFGEDEC:7"
+  },
+  "F5_006": {
+   "edition": "F5_006.xml",
+   "run": "F:841-852:ACAGFGA:5"
+  },
+  "F5_007": {
+   "edition": "F5_007.xml",
+   "run": "F:841-852:ACAGFG:4"
+  },
+  "F5_009": {
+   "edition": "F5_009.xml",
+   "run": "F:841-856:ABCAGABGFG:79"
+  },
+  "F5_010": {
+   "edition": "F5_010.xml",
+   "run": "F:841-856:ABCAGABGFG:40"
+  },
+  "F5_011": {
+   "edition": "F5_011.xml",
+   "run": "F:841-856:ABCAGABGFG:39"
+  },
+  "F5_013": {
+   "edition": "F5_013.xml",
+   "run": "F:841-856:ABCAGABGFG:40"
+  },
+  "F5_014": {
+   "edition": "F5_014.xml",
+   "run": "F:848-862:ABCAGABGFG:83"
+  },
+  "F5_015": {
+   "edition": "F5_015.xml",
+   "run": "F:848-862:ABCAGABGFG:36"
+  },
+  "F5_016": {
+   "edition": "F5_016.xml",
+   "run": "F:848-862:ABCAGABGFG:38"
+  },
+  "F5_017": {
+   "edition": "F5_017.xml",
+   "run": "F:848-862:ABCAGABGFG:41"
+  },
+  "F5_018": {
+   "edition": "F5_018.xml",
+   "run": "F:853-866:ABCAGABGFG:68"
+  },
+  "F5_019": {
+   "edition": "F5_019.xml",
+   "run": "F:853-866:CDCACCCCED:8"
+  },
+  "F5_020": {
+   "edition": "F5_020.xml",
+   "run": "W1:782-778:CDCACCED:6"
+  },
+  "F5_021": {
+   "edition": "F5_021.xml",
+   "run": "F:853-866:CDCACCCED:7"
+  },
+  "F5_022": {
+   "edition": "F5_022.xml",
+   "run": "F:853-866:CDCACCCCED:8"
+  },
+  "F5_023": {
+   "edition": "F5_023.xml",
+   "run": "F:853-866:CDCACCCCED:8"
+  },
+  "F5_024": {
+   "edition": "F5_024.xml",
+   "run": "F:857-871:CDCACCCCED:49"
+  },
+  "F5_026": {
+   "edition": "F5_026.xml",
+   "run": "F:857-871:DCCACDCBCD:53"
+  },
+  "F5_027": {
+   "edition": "F5_027.xml",
+   "run": "F:857-871:DCCACDCBCD:55"
+  },
+  "F5_028": {
+   "edition": "F5_028.xml",
+   "run": "F:863-874:DCCACDCBCD:56"
+  },
+  "F5_029": {
+   "edition": "F5_029.xml",
+   "run": "F:863-874:DCCACDCBCD:52"
+  },
+  "F5_030": {
+   "edition": "F5_030.xml",
+   "run": "F:863-874:DCCACDCBCD:54"
+  },
+  "F5_031": {
+   "edition": "F5_031.xml",
+   "run": "F:863-874:DCCACDCBCD:53"
+  },
+  "F5_032": {
+   "edition": "F5_032.xml",
+   "run": "F:863-874:DCCACDCBCD:51"
+  },
+  "F5_033": {
+   "edition": "F5_033.xml",
+   "run": "F:867-877:DCCACDCBCD:109"
+  },
+  "F5_034": {
+   "edition": "F5_034.xml",
+   "run": "F:867-877:DCCACDCBCD:53"
+  },
+  "F5_035": {
+   "edition": "F5_035.xml",
+   "run": "F:867-877:DCCACDCBCD:91"
+  },
+  "F5_038": {
+   "edition": "F5_038.xml",
+   "run": "F:872-883:DDFFGAFDGF:19"
+  },
+  "F5_039": {
+   "edition": "F5_039.xml",
+   "run": "F:875-886:DDFFGAFDGF:19"
+  },
+  "F5_040": {
+   "edition": "F5_040.xml",
+   "run": "F:875-886:CCCACDECDE:39"
+  },
+  "F5_041": {
+   "edition": "F5_041.xml",
+   "run": "F:875-886:CCCACDECDE:38"
+  },
+  "F5_042": {
+   "edition": "F5_042.xml",
+   "run": "F:875-886:CCDCCGCDCD:34"
+  },
+  "F5_043": {
+   "edition": "F5_043.xml",
+   "run": "F:875-886:CCDCCGCDCD:34"
+  },
+  "F5_044": {
+   "edition": "F5_044.xml",
+   "run": "F:875-886:CCDCCGCDCD:34"
+  },
+  "F5_045": {
+   "edition": "F5_045.xml",
+   "run": "F:878-891:CCDCCGCDCD:34"
+  },
+  "F5_046": {
+   "edition": "F5_046.xml",
+   "run": "F:878-891:CCDCCGCDCD:34"
+  },
+  "F5_047": {
+   "edition": "F5_047.xml",
+   "run": "F:878-891:CCCACDECDE:39"
+  },
+  "F5_048": {
+   "edition": "F5_048.xml",
+   "run": "F:884-899:CCCACDECDE:39"
+  },
+  "F5_049": {
+   "edition": "F5_049.xml",
+   "run": "F:884-899:CCDCCGCDC:7"
+  },
+  "F5_050": {
+   "edition": "F5_050.xml",
+   "run": "F:884-899:ACDDCEFDCC:17"
+  },
+  "F5_053": {
+   "edition": "F5_053.xml",
+   "run": "F:887-903:DDCDDCDACD:16"
+  },
+  "F5_054": {
+   "edition": "F5_054.xml",
+   "run": "F:887-903:DDFFGAFDGF:20"
+  },
+  "F5_055": {
+   "edition": "F5_055.xml",
+   "run": "F:887-903:FGAGACDCBC:11"
+  },
+  "F5_056": {
+   "edition": "F5_056.xml",
+   "run": "F:887-903:CCACDCBCDA:26"
+  },
+  "F5_057": {
+   "edition": "F5_057.xml",
+   "run": "F:887-903:FFFFAFAGFA:43"
+  },
+  "F5_058": {
+   "edition": "F5_058.xml",
+   "run": "F:887-903:AFAGFAFGAC:17"
+  },
+  "F5_061": {
+   "edition": "F5_061.xml",
+   "run": "F:892-907:AFGACCDFDC:11"
+  },
+  "F5_062": {
+   "edition": "F5_062.xml",
+   "run": "F:892-907:DFDDDFFGAF:23"
+  },
+  "F5_065": {
+   "edition": "F5_065.xml",
+   "run": "F:900-909:DCDCECACBD:40"
+  },
+  "F5_068": {
+   "edition": "F5_068.xml",
+   "run": "F:900-909:CDFFCDDCCA:46"
+  },
+  "F5_069": {
+   "edition": "F5_069.xml",
+   "run": "F:904-912:CDFFCDDCCC:48"
+  },
+  "F5_070": {
+   "edition": "F5_070.xml",
+   "run": "F:904-912:CDFFCDDCCA:90"
+  },
+  "F5_071": {
+   "edition": "F5_071.xml",
+   "run": "F:908-915:FGACDFFCDD:54"
+  },
+  "F5_072": {
+   "edition": "F5_072.xml",
+   "run": "F:908-915:FGACDFFCDD:50"
+  },
+  "F5_073": {
+   "edition": "F5_073.xml",
+   "run": "F:908-915:AGBAGAFACC:16"
+  },
+  "F5_074": {
+   "edition": "F5_074.xml",
+   "run": "F:910-915:BAGAFACCCC:30"
+  },
+  "F5_075": {
+   "edition": "F5_075.xml",
+   "run": "F:910-915:AGBAGAFACC:14"
+  },
+  "F5_080": {
+   "edition": "F5_080.xml",
+   "run": "W1:734-729:DCDEFDCCDE:94"
+  },
+  "F5_085": {
+   "edition": "F5_085.xml",
+   "run": "W1:734-729:CCBCDECBCC:32"
+  },
+  "F5_086": {
+   "edition": "F5_086.xml",
+   "run": "W1:734-729:CCBCDECBCC:32"
+  },
+  "F5_089": {
+   "edition": "F5_089.xml",
+   "run": "W1:734-729:CCBCDECBCC:31"
+  },
+  "F5_095": {
+   "edition": "F5_095.xml",
+   "run": "W1:731-726:GAGAGAGAEF:42"
+  },
+  "F5_098a": {
+   "edition": "F5_098a.xml",
+   "run": "W1:728-722:DCBCBABBBG:85"
+  },
+  "F5_098b": {
+   "edition": "F5_098b.xml",
+   "run": "W1:728-722:DCBCBABBBG:85"
+  },
+  "F5_100": {
+   "edition": "F5_100.xml",
+   "run": "W1:728-722:CBCBABBGCD:48"
+  },
+  "F5_103": {
+   "edition": "F5_103.xml",
+   "run": "W1:728-722:CBCBABBGCD:51"
+  },
+  "F5_107": {
+   "edition": "F5_107.xml",
+   "run": "W1:725-720:DABAGCCBGA:32"
+  },
+  "F5_111": {
+   "edition": "F5_111.xml",
+   "run": "W1:725-720:CFGBBBBBAF:40"
+  },
+  "F5_112": {
+   "edition": "F5_112.xml",
+   "run": "W1:725-720:CFGBBBBBAF:39"
+  },
+  "F5_122": {
+   "edition": "F5_122.xml",
+   "run": "W1:723-717:CGGFGABGGF:37"
+  },
+  "F5_135": {
+   "edition": "F5_135.xml",
+   "run": "W1:758-753:FGGFGFEFED:63"
+  },
+  "F5_137": {
+   "edition": "F5_137.xml",
+   "run": "W1:758-753:ACAAGAGEFG:44"
+  },
+  "F5_144": {
+   "edition": "F5_144.xml",
+   "run": "W1:761-756:DDAACCABGG:93"
+  },
+  "F5_146": {
+   "edition": "F5_146.xml",
+   "run": "W1:719-714:DAABAGAGFE:42"
+  },
+  "F5_151": {
+   "edition": "F5_151.xml",
+   "run": "W1:716-711:AGAEFGEGBA:28"
+  },
+  "F5_153": {
+   "edition": "F5_153.xml",
+   "run": "W1:716-711:AGAEFGEGBA:28"
+  },
+  "F5_163": {
+   "edition": "F5_163.xml",
+   "run": "W1:710-705:GBGAAGFAAG:34"
+  },
+  "F5_164": {
+   "edition": "F5_164.xml",
+   "run": "W1:707-702:CEFGGAEFGG:40"
+  },
+  "F5_166": {
+   "edition": "F5_166.xml",
+   "run": "W1:707-702:CEFGGAEFGG:38"
+  },
+  "F5_170": {
+   "edition": "F5_170.xml",
+   "run": "W1:755-750:CEFGGAEFGG:38"
+  },
+  "F5_177": {
+   "edition": "F5_177.xml",
+   "run": "W1:704-699:ACDCDCDAFA:40"
+  },
+  "F5_178": {
+   "edition": "F5_178.xml",
+   "run": "W1:704-699:ACDCDCDAFA:39"
+  },
+  "F5_189": {
+   "edition": "F5_189.xml",
+   "run": "W1:692-688:DFDEFGEFED:67"
+  },
+  "F5_191": {
+   "edition": "F5_191.xml",
+   "run": "W1:692-688:CDCCACDCDC:33"
+  },
+  "F5_192": {
+   "edition": "F5_192.xml",
+   "run": "W1:689-684:CCCDCDECDC:28"
+  },
+  "F5_193": {
+   "edition": "F5_193.xml",
+   "run": "W1:689-684:CCCDCDECDC:27"
+  },
+  "F5_197": {
+   "edition": "F5_197.xml",
+   "run": "W1:794-789:CCCDCDECDC:26"
+  },
+  "F5_198": {
+   "edition": "F5_198.xml",
+   "run": "W1:686-681:CDAGAFACCB:12"
+  },
+  "F5_200": {
+   "edition": "F5_200.xml",
+   "run": "W1:686-681:FACEDEDDCD:18"
+  },
+  "F5_262": {
+   "edition": "F5_262.xml",
+   "run": "W1:698-694:AGAEFGEGBA:28"
+  },
+  "F5_267": {
+   "edition": "F5_267.xml",
+   "run": "W1:710-705:GBGAAGFAAG:34"
+  },
+  "F5_271": {
+   "edition": "F5_271.xml",
+   "run": "W1:807-802:DDFDEFGEFE:21"
+  },
+  "F5_278": {
+   "edition": "F5_278.xml",
+   "run": "W1:689-684:CCCDCDECDC:27"
+  },
+  "F5_305a": {
+   "edition": "F5_305a.xml",
+   "run": "W1:761-756:DEDC:4"
+  },
+  "F5_335": {
+   "edition": "F5_335.xml",
+   "run": "W1:740-735:AGCDC:4"
+  },
+  "F5_355": {
+   "edition": "F5_355.xml",
+   "run": "W1:716-711:GFEFD:4"
+  },
+  "F5_390a": {
+   "edition": "F5_390a.xml",
+   "run": "W1:797-792:GEFD:4"
+  },
+  "F5_444": {
+   "edition": "F5_444.xml",
+   "run": "W1:791-786:FGACDFFCDD:48"
+  }
+ },
+ "groups": [
+  [
+   "F5_001"
+  ],
+  [
+   "F5_002"
+  ],
+  [
+   "F5_003"
+  ],
+  [
+   "F5_004"
+  ],
+  [
+   "F5_005"
+  ],
+  [
+   "F5_006"
+  ],
+  [
+   "F5_007"
+  ],
+  [
+   "F5_009"
+  ],
+  [
+   "F5_010"
+  ],
+  [
+   "F5_011"
+  ],
+  [
+   "F5_013"
+  ],
+  [
+   "F5_014"
+  ],
+  [
+   "F5_015"
+  ],
+  [
+   "F5_016"
+  ],
+  [
+   "F5_017"
+  ],
+  [
+   "F5_018"
+  ],
+  [
+   "F5_019"
+  ],
+  [
+   "F5_020"
+  ],
+  [
+   "F5_021"
+  ],
+  [
+   "F5_022"
+  ],
+  [
+   "F5_023"
+  ],
+  [
+   "F5_024"
+  ],
+  [
+   "F5_026"
+  ],
+  [
+   "F5_027"
+  ],
+  [
+   "F5_028"
+  ],
+  [
+   "F5_029"
+  ],
+  [
+   "F5_030"
+  ],
+  [
+   "F5_031"
+  ],
+  [
+   "F5_032"
+  ],
+  [
+   "F5_033"
+  ],
+  [
+   "F5_034"
+  ],
+  [
+   "F5_035"
+  ],
+  [
+   "F5_038"
+  ],
+  [
+   "F5_039"
+  ],
+  [
+   "F5_040"
+  ],
+  [
+   "F5_041"
+  ],
+  [
+   "F5_042"
+  ],
+  [
+   "F5_043"
+  ],
+  [
+   "F5_044"
+  ],
+  [
+   "F5_045"
+  ],
+  [
+   "F5_046"
+  ],
+  [
+   "F5_047"
+  ],
+  [
+   "F5_048"
+  ],
+  [
+   "F5_049"
+  ],
+  [
+   "F5_050"
+  ],
+  [
+   "F5_053"
+  ],
+  [
+   "F5_054"
+  ],
+  [
+   "F5_055"
+  ],
+  [
+   "F5_056"
+  ],
+  [
+   "F5_057"
+  ],
+  [
+   "F5_058"
+  ],
+  [
+   "F5_061"
+  ],
+  [
+   "F5_062"
+  ],
+  [
+   "F5_065"
+  ],
+  [
+   "F5_068"
+  ],
+  [
+   "F5_069"
+  ],
+  [
+   "F5_070"
+  ],
+  [
+   "F5_071"
+  ],
+  [
+   "F5_072"
+  ],
+  [
+   "F5_073"
+  ],
+  [
+   "F5_074"
+  ],
+  [
+   "F5_075"
+  ],
+  [
+   "F5_080"
+  ],
+  [
+   "F5_085"
+  ],
+  [
+   "F5_086"
+  ],
+  [
+   "F5_089"
+  ],
+  [
+   "F5_095"
+  ],
+  [
+   "F5_098a",
+   "F5_098b"
+  ],
+  [
+   "F5_100"
+  ],
+  [
+   "F5_103"
+  ],
+  [
+   "F5_107"
+  ],
+  [
+   "F5_111"
+  ],
+  [
+   "F5_112"
+  ],
+  [
+   "F5_122"
+  ],
+  [
+   "F5_135"
+  ],
+  [
+   "F5_137"
+  ],
+  [
+   "F5_144"
+  ],
+  [
+   "F5_146"
+  ],
+  [
+   "F5_151"
+  ],
+  [
+   "F5_153"
+  ],
+  [
+   "F5_163",
+   "F5_267"
+  ],
+  [
+   "F5_164"
+  ],
+  [
+   "F5_166"
+  ],
+  [
+   "F5_170"
+  ],
+  [
+   "F5_177"
+  ],
+  [
+   "F5_178"
+  ],
+  [
+   "F5_189"
+  ],
+  [
+   "F5_191"
+  ],
+  [
+   "F5_192"
+  ],
+  [
+   "F5_193",
+   "F5_278"
+  ],
+  [
+   "F5_197"
+  ],
+  [
+   "F5_198"
+  ],
+  [
+   "F5_200"
+  ],
+  [
+   "F5_262"
+  ],
+  [
+   "F5_271"
+  ],
+  [
+   "F5_305a"
+  ],
+  [
+   "F5_335"
+  ],
+  [
+   "F5_355"
+  ],
+  [
+   "F5_390a"
+  ],
+  [
+   "F5_444"
+  ]
+ ],
+ "exclude_from_training": [],
+ "notes": {
+  "F5_001": "F concordance; duplum/tenor match 0.70/1.00",
+  "F5_002": "F concordance; duplum/tenor match 0.82/1.00",
+  "F5_003": "F concordance; duplum/tenor match 0.66/1.00",
+  "F5_004": "CANDR clausula starts one system late (the opening closes setting 843); partial match",
+  "F5_005": "F concordance; duplum/tenor match 0.87/1.00",
+  "F5_006": "F concordance; duplum/tenor match 0.91/1.00",
+  "F5_007": "F concordance; duplum/tenor match 1.00/1.00",
+  "F5_009": "F concordance; duplum/tenor match 0.96/1.00",
+  "F5_010": "F concordance; duplum/tenor match 1.00/1.00",
+  "F5_011": "F concordance; duplum/tenor match 0.95/1.00",
+  "F5_013": "F concordance; duplum/tenor match 0.93/1.00",
+  "F5_014": "F concordance; duplum/tenor match 0.93/0.98",
+  "F5_015": "F concordance; duplum/tenor match 0.96/1.00",
+  "F5_016": "F concordance; duplum/tenor match 1.00/1.00",
+  "F5_017": "F concordance; duplum/tenor match 1.00/1.00",
+  "F5_018": "F concordance; duplum/tenor match 0.85/0.96",
+  "F5_019": "F concordance; duplum/tenor match 0.94/1.00",
+  "F5_020": "W1 concordance; duplum/tenor match 0.77/1.00",
+  "F5_021": "F concordance; duplum/tenor match 0.91/1.00",
+  "F5_022": "F concordance; duplum/tenor match 0.97/1.00",
+  "F5_023": "F concordance; duplum/tenor match 0.89/1.00",
+  "F5_024": "F concordance; duplum/tenor match 0.89/0.94",
+  "F5_026": "F concordance; duplum/tenor match 0.84/0.96",
+  "F5_027": "F concordance; duplum/tenor match 0.94/0.98",
+  "F5_028": "F concordance; duplum/tenor match 0.88/1.00",
+  "F5_029": "F concordance; duplum/tenor match 0.91/0.97",
+  "F5_030": "F concordance; duplum/tenor match 0.98/0.96",
+  "F5_031": "F concordance; duplum/tenor match 0.90/1.00",
+  "F5_032": "F concordance; duplum/tenor match 0.80/0.98",
+  "F5_033": "F concordance; duplum/tenor match 0.84/0.97",
+  "F5_034": "F concordance; duplum/tenor match 0.98/0.96",
+  "F5_035": "F concordance; duplum/tenor match 0.91/0.99",
+  "F5_038": "F concordance; duplum/tenor match 0.71/0.90",
+  "F5_039": "F concordance; duplum/tenor match 0.96/1.00",
+  "F5_040": "F concordance; duplum/tenor match 0.60/1.00",
+  "F5_041": "F concordance; duplum/tenor match 0.89/1.00",
+  "F5_042": "F concordance; duplum/tenor match 0.97/1.00",
+  "F5_043": "F concordance; duplum/tenor match 0.97/0.97",
+  "F5_044": "F concordance; duplum/tenor match 0.97/0.97",
+  "F5_045": "F concordance; duplum/tenor match 0.96/0.97",
+  "F5_046": "F concordance; duplum/tenor match 0.82/1.00",
+  "F5_047": "F concordance; duplum/tenor match 0.93/0.95",
+  "F5_048": "F concordance; duplum/tenor match 1.00/0.98",
+  "F5_049": "F concordance; duplum/tenor match 0.71/1.00",
+  "F5_050": "F concordance; duplum/tenor match 0.83/1.00",
+  "F5_053": "F concordance; duplum/tenor match 1.00/1.00",
+  "F5_054": "F concordance; duplum/tenor match 0.95/1.00",
+  "F5_055": "F concordance; duplum/tenor match 1.00/1.00",
+  "F5_056": "F concordance; duplum/tenor match 0.82/0.98",
+  "F5_057": "F concordance; duplum/tenor match 0.96/1.00",
+  "F5_058": "F concordance; duplum/tenor match 0.88/1.00",
+  "F5_061": "F concordance; duplum/tenor match 0.83/1.00",
+  "F5_062": "F concordance; duplum/tenor match 0.90/1.00",
+  "F5_065": "F concordance; duplum/tenor match 0.89/0.98",
+  "F5_068": "F concordance; duplum/tenor match 0.78/1.00",
+  "F5_069": "F concordance; duplum/tenor match 0.82/0.98",
+  "F5_070": "F concordance; duplum/tenor match 0.96/0.99",
+  "F5_071": "F concordance; duplum/tenor match 0.85/0.97",
+  "F5_072": "F concordance; duplum/tenor match 0.72/0.98",
+  "F5_073": "F concordance; duplum/tenor match 0.95/0.97",
+  "F5_074": "F concordance; duplum/tenor match 1.00/1.00",
+  "F5_075": "F concordance; duplum/tenor match 0.82/0.98",
+  "F5_080": "W1 concordance; duplum/tenor match 0.94/0.99",
+  "F5_085": "W1 concordance; duplum/tenor match 0.87/1.00",
+  "F5_086": "W1 concordance; duplum/tenor match 0.75/0.97",
+  "F5_089": "W1 concordance; duplum/tenor match 0.76/0.94",
+  "F5_095": "W1 concordance; duplum/tenor match 0.93/0.93",
+  "F5_098a": "W1 concordance; duplum/tenor match 0.92/0.97",
+  "F5_098b": "W1 concordance; duplum/tenor match 0.93/0.97",
+  "F5_100": "W1 concordance; duplum/tenor match 0.62/0.96",
+  "F5_103": "W1 concordance; duplum/tenor match 0.80/0.98",
+  "F5_107": "W1 concordance; duplum/tenor match 0.87/1.00",
+  "F5_111": "W1 concordance; duplum/tenor match 0.99/0.95",
+  "F5_112": "W1 concordance; duplum/tenor match 0.94/0.98",
+  "F5_122": "W1 concordance; duplum/tenor match 0.91/1.00",
+  "F5_135": "W1 concordance; duplum/tenor match 0.92/1.00",
+  "F5_137": "W1 concordance; duplum/tenor match 0.92/0.97",
+  "F5_144": "W1 concordance; duplum/tenor match 0.90/0.98",
+  "F5_146": "W1 concordance; duplum/tenor match 0.85/0.98",
+  "F5_151": "W1 concordance; duplum/tenor match 0.74/0.90",
+  "F5_153": "W1 concordance; duplum/tenor match 0.94/1.00",
+  "F5_163": "W1 concordance; duplum/tenor match 0.85/1.00",
+  "F5_164": "W1 concordance; duplum/tenor match 0.81/0.98",
+  "F5_166": "W1 concordance; duplum/tenor match 0.92/1.00",
+  "F5_170": "W1 concordance; duplum/tenor match 0.91/0.97",
+  "F5_177": "W1 concordance; duplum/tenor match 0.88/0.98",
+  "F5_178": "W1 concordance; duplum/tenor match 0.92/0.98",
+  "F5_189": "W1 concordance; duplum/tenor match 0.88/0.96",
+  "F5_191": "W1 concordance; duplum/tenor match 0.90/0.94",
+  "F5_192": "W1 concordance; duplum/tenor match 0.90/0.97",
+  "F5_193": "W1 concordance; duplum/tenor match 0.92/1.00",
+  "F5_197": "W1 concordance; duplum/tenor match 0.77/0.96",
+  "F5_198": "W1 concordance; duplum/tenor match 0.83/0.96",
+  "F5_200": "W1 concordance; duplum/tenor match 0.79/1.00",
+  "F5_262": "W1 concordance; duplum/tenor match 0.76/1.00",
+  "F5_267": "W1 concordance; duplum/tenor match 0.83/1.00",
+  "F5_271": "W1 concordance; duplum/tenor match 0.76/1.00",
+  "F5_278": "W1 concordance; duplum/tenor match 0.92/1.00",
+  "F5_305a": "W1 concordance; duplum/tenor match 0.75/1.00",
+  "F5_335": "W1 concordance; duplum/tenor match 0.80/0.80",
+  "F5_355": "W1 concordance; duplum/tenor match 0.85/0.80",
+  "F5_390a": "W1 concordance; duplum/tenor match 0.77/1.00",
+  "F5_444": "W1 concordance; duplum/tenor match 0.79/1.00"
+ }
+}

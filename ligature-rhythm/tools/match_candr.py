@@ -6,8 +6,10 @@ Usage:
 For every section:
 
 * candidate runs: the F settings on the piece's leaf, the one before and the one after (manuscript
-  order from candr/manifest.csv), and every window of six consecutive W1 settings from the
-  clausula fascicle whose tenor contains the section's tenor incipit (one mismatch allowed);
+  order from candr/manifest.csv). With --include-w1, also every window of six consecutive W1
+  settings from the clausula fascicle whose tenor contains the section's tenor incipit (one
+  mismatch allowed). Off by default: the edition's rhythm is F's, and pairing it with W1's
+  ligation teaches the reader rhythms W1's notation may not imply;
 * each run is cut with the section's own tenor incipit (first ten pitch letters) and a restart
   gap just under the chant's period, and the clausula whose upper voice best fits the duplum is
   taken;
@@ -84,6 +86,8 @@ def main(argv=None):
     ap.add_argument('--candr', default='candr')
     ap.add_argument('--editions', default='editions_payne')
     ap.add_argument('--out', default='f5_payne.json')
+    ap.add_argument('--include-w1', action='store_true',
+                    help="also match W1 concordances (F rhythm on W1 notation: noisier labels)")
     a = ap.parse_args(argv)
     candr, ed_dir = Path(a.candr), Path(a.editions)
 
@@ -131,7 +135,8 @@ def main(argv=None):
         ids = tuple(i for i, k in F if fk is not None and fk - 1 <= k <= fk + 1)
         if ids:
             cands.append(('F', ids))
-        cands += [('W1', tuple(w)) for w in W1_windows if has_incipit(tuple(w), inc[:6])]
+        if a.include_w1:
+            cands += [('W1', tuple(w)) for w in W1_windows if has_incipit(tuple(w), inc[:6])]
         best = None
         for ms, ids in cands:
             for cl in clausulae(ids, inc, gap):

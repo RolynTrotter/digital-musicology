@@ -116,6 +116,31 @@ def gold_style(items, fixed) -> str:
     return c.most_common(1)[0][0] if c else 'P'
 
 
+def fifth_mode_ordines(items, fixed) -> dict:
+    """{tenor note: 5} for ordines the edition reads in the fifth mode: every labelled note a
+    perfect or duplex long, except that the last may be a long before a breve rest (how editions
+    such as Payne's close fifth-mode ordines). The theorists' prior alone reads that close as
+    first mode, which mislabels whole fifth-mode tenors."""
+    ordines, cur = [], []
+    for k, it in enumerate(items):
+        if it.is_note:
+            cur.append(k)
+        elif cur:
+            ordines.append(cur)
+            cur = []
+    if cur:
+        ordines.append(cur)
+    out = {}
+    for o in ordines:
+        v = [fixed[k] for k in o if k in fixed]
+        if v and all(x in (6, 12) for x in v[:-1]) and v[-1] in ((4, 6, 12) if len(v) > 1 else (6, 12)):
+            last = o[-1]
+            if v[-1] == 4 and fixed.get(last + 1) != 2:
+                continue
+            out.update({k: 5 for k in o})
+    return out
+
+
 @dataclass
 class Example:
     piece: str
@@ -143,9 +168,13 @@ def build_example(piece: str, bench: Benchmark) -> Example:
     gt = decode(ti, TENOR, th, fixed=ft, style=st)
     gu = decode(ui, UPPER, th, fixed=fu, style=su, targets=synch_targets(ti, gt.values, ui, True))
     mt = {k: m for k, m in enumerate(gt.modes) if ti[k].is_note}
+    mt.update(fifth_mode_ordines(ti, ft))
     mu = {k: m for k, m in enumerate(gu.modes) if ui[k].is_note}
-    hu = 2 if su == 'B' else Counter(mu.values()).most_common(1)[0][0]
-    ht = Counter(mt.values()).most_common(1)[0][0]
+    # home modes are voted by the notes the edition labels: a CANDR clausula often runs on past
+    # the edited section, and its unlabelled notes only carry the prior's guess
+    vote = lambda modes, fixed: Counter(m for k, m in modes.items() if k in fixed) or Counter(modes.values())
+    hu = 2 if su == 'B' else vote(mu, fu).most_common(1)[0][0]
+    ht = vote(mt, ft).most_common(1)[0][0]
     return Example(piece, ui, ti, fu, ft, mu, mt, su, st, hu, ht)
 
 

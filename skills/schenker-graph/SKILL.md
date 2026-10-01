@@ -89,8 +89,8 @@ heads inside each pair of pairs) is drawn as sub-stems on the notes it joins, no
 (`substems=True`, `substem_length=5.5`; `--no-substems` for slurs). Pedal stems are 4.5 spaces.
 Levels at or below the ordo are never sub-stemmed.
 
-Options: `--no-substems`, `--max-slur-stack N` (default 2; 0 = print all), `--max-system-load N` (0 = off),
-`--min-gap S`, `--upper-slurs-only` (drop the foreground slurs), `--no-slurs`, `--no-reference`
+Options: `--no-substems`, `--max-slur-stack N` (default 2; 0 = print all), `--max-system-load N`
+(0 = off), `--min-gap S`, `--upper-slurs-only` (drop the foreground slurs), `--no-slurs`, `--no-reference`
 (leave the tenor unmarked), `--ligatures` (analyse with ligatures first), `--stacked fundamental
 pair ordo` (reduction staves above the score, from music21's `ScoreReduction`, top staff beamed),
 `--title`. In Python, `graph_from_tree(a, max_slur_level=…, pedal_stems=…, system_breaks=…,

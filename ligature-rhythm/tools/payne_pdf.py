@@ -14,6 +14,12 @@ identity and position rather than from pixels:
 * value: notehead (quarter-type œ, half ˙, whole w) + stem + flags (J/j) or beams (filled black
   quadrilaterals at the stem end) + augmentation dots; rests Œ (4) and ‰ (2) with dots
 * only black glyphs are notes; red is editorial apparatus (strokes, ficta, parenthesised notes)
+* accidentals: the black key signature and black accidentals (a signature glyph is never a note's
+  accidental; an accidental belongs to a note on its own line or space); then Payne's red apparatus
+  (``FICTA_POLICY``, default 'all'): red signatures at the clef, red signature changes within a
+  system, red accidentals before a note, small red ficta above a note (supported by a concordance;
+  in parentheses, cautionary) and bracketed editorial ficta (Fughetta glyphs). 'source' leaves
+  out the bracketed editorial ones, 'none' all red apparatus
 * small noteheads (11.8pt) are Payne's plica notes
 
 Values are in sixteenths as in ligature-rhythm (B = 2, L = 4, L. = 6). A stemless notehead or a
@@ -31,6 +37,20 @@ STEPS = 'CDEFGAB'
 # bottom staff line as (step index, octave) for each clef glyph
 CLEF_BOTTOM = {'V': (2, 3), '&': (2, 4), '?': (4, 2)}
 HEADER = re.compile(r'^(\d+)\.\s+F, f\.\s*(\d+[rv]),\s*([IVX]+)(?:,\s*(\d+))?:\s*(.*)$')
+
+
+def _red(c) -> bool:
+    col = c.get('non_stroking_color')
+    col = tuple(col) if isinstance(col, (list, tuple)) else (col,)
+    return len(col) == 3 and col[0] > 0.8 and col[1] < 0.2 and col[2] < 0.2
+
+
+# Payne's apparatus (red): Maestro accidentals in the staff (a signature, or an accidental before a
+# note) and small ones above a note (ficta supported by a concordance; in parentheses, cautionary);
+# Fughetta glyphs for bracketed, editorial ficta: '´' = [flat], '©' = [natural]
+FICTA_POLICY = 'all'          # 'all' | 'source' (no bracketed editorial ficta) | 'none'
+_FUGHETTA = {'´': -1, '©': 0}
+_ALTER = {'b': -1, 'n': 0, '#': 1}
 
 
 def _black(c) -> bool:
@@ -52,6 +72,8 @@ class Ev:
     glyph: str = ''
     y: float = 0.0
     page: int = 0
+    ficta: str = ''                # how the alter was set, if not by the black text: 'sig-red',
+                                   # 'red', 'concordance', 'cautionary', 'editorial'
 
 
 @dataclass
@@ -120,7 +142,53 @@ def headers_of(page, pno):
 
 
 # --------------------------------------------------------------------------- one staff
-def read_staff(page, staff, glyphs, vlines, beams, sysno, pno, warn):
+def _sig_step(pitch_at, ay, half, glyph='b'):
+    """Step of a signature accidental. A few of Payne's red signature flats sit up to half a
+    step off their line; between two steps, take B or E for a flat, F or C for a sharp."""
+    here = pitch_at(ay)[0]
+    want = ('F', 'C') if glyph == '#' else ('B', 'E')
+    for s in (here, pitch_at(ay - 0.45 * half)[0], pitch_at(ay + 0.45 * half)[0]):
+        if s in want:
+            return s
+    return here
+
+
+def _red_alter(redmine, x, y, w, step, octv, alter, how, staff, sp, half, base, pitch_at, cx,
+               first_x, attached=frozenset()):
+    """Apply Payne's red apparatus to one note at (x, y): a red accidental just before it on its
+    line or space, a red signature change earlier in the staff, or ficta above it."""
+    for a in redmine:
+        ax, ay, t, font = a['matrix'][4], base(a), a['text'], a['fontname']
+        maestro = 'Maestro' in font
+        if maestro and t in ('(', ')'):
+            continue
+        if not maestro and FICTA_POLICY == 'source':
+            continue
+        val = _ALTER.get(t) if maestro else _FUGHETTA.get(t)
+        if val is None:
+            continue
+        inside = staff['top'] - half <= ay <= staff['bottom'] + half
+        if inside and (maestro and a['size'] > 14 or not maestro):
+            if x - 12 < ax < x - 1 and pitch_at(ay) == (step, octv):
+                # a red accidental (or bracketed one) right before the note
+                alter, how = val, ('red' if maestro else 'editorial')
+            elif maestro and id(a) not in attached and ax < x - 1 \
+                    and ax > min(cx + 30, first_x - 3) \
+                    and _sig_step(pitch_at, ay, half, t) == step and how in ('', 'sig-red', 'sig-change'):
+                # a red signature change earlier in the system (not next to a note of its pitch)
+                alter, how = val, 'sig-change'
+        elif ay < staff['top'] and staff['top'] - ay < 6 * sp:
+            # ficta above the note: centred over its head
+            if abs((ax + 2.5) - (x + w / 2)) < 0.9 * w:
+                paren = any(b['text'] == '(' and 'Maestro' in b['fontname'] and
+                            0 <= ax - b['matrix'][4] < 4 and abs(base(b) - ay) < 2 for b in redmine)
+                alter = val
+                how = 'editorial' if not maestro else ('cautionary' if paren else 'concordance')
+    return alter, how
+
+
+
+def read_staff(page, staff, glyphs, vlines, beams, sysno, pno, warn, red=()):
     sp = staff['sp']
     half = sp / 2
     H = page.height
@@ -152,6 +220,13 @@ def read_staff(page, staff, glyphs, vlines, beams, sysno, pno, warn):
         if c['text'] in ('b', '#') and cx < c['matrix'][4] < min(cx + 30, first_x - 3):
             keysig[pitch_at(base(c))[0]] = -1 if c['text'] == 'b' else 1
             keysig_glyphs.add(id(c))
+    redmine = [c for c in red if lo <= base(c) <= hi] if FICTA_POLICY != 'none' else []
+    red_sig = set()
+    for c in redmine:
+        if 'Maestro' in c['fontname'] and c['text'] in ('b', '#') and c['size'] > 14 \
+                and cx < c['matrix'][4] < min(cx + 30, first_x - 3):
+            keysig[_sig_step(pitch_at, base(c), half, c['text'])] = _ALTER[c['text']]
+            red_sig.add(_sig_step(pitch_at, base(c), half, c['text']))
     # accidentals: not the key signature's flats (a signature flat on the B line just before a
     # system's first note is not that note's accidental)
     accs = [c for c in mine if c['text'] in ('b', 'n', '#') and c['matrix'][4] > cx + 5
@@ -160,6 +235,11 @@ def read_staff(page, staff, glyphs, vlines, beams, sysno, pno, warn):
     flags = [c for c in mine if c['text'] in ('J', 'j')]
     rests = [c for c in mine if c['text'] in ('Œ', '‰', '∑') and c['matrix'][4] > cx + 5]
 
+    # red accidentals in the staff that stand right before a note of their pitch
+    attached = {id(a) for a in redmine for h in heads
+                if 'Maestro' in a['fontname'] and a['text'] in _ALTER
+                and h['matrix'][4] - 12 < a['matrix'][4] < h['matrix'][4] - 1
+                and pitch_at(base(a)) == pitch_at(base(h))}
     events = []
     for c in heads:
         x, y = c['matrix'][4], base(c)
@@ -167,11 +247,16 @@ def read_staff(page, staff, glyphs, vlines, beams, sysno, pno, warn):
         w = 7.0 * c['size'] / 16.8          # notehead width
         step, octv = pitch_at(y)
         alter = keysig.get(step, 0)
+        how = 'sig-red' if step in red_sig else ''
         for a in accs:
             ax, ay = a['matrix'][4], base(a)
             # an accidental belongs to a note on its own line or space
             if x - 12 < ax < x - 1 and abs(ay - y) < half * 1.2 and pitch_at(ay) == (step, octv):
                 alter = {'b': -1, 'n': 0, '#': 1}[a['text']]
+                how = 'black'
+        alter, how = _red_alter(redmine, x, y, w, step, octv, alter, how, staff, sp, half, base,
+                                pitch_at, cx, first_x, attached)
+        how = '' if how == 'black' else how
         # stem: a vertical line touching the notehead at its left or right edge
         stem = None
         for v in vlines:
@@ -205,7 +290,8 @@ def read_staff(page, staff, glyphs, vlines, beams, sysno, pno, warn):
                  -1.0 <= y - base(d) <= half + 1.0)
         if measured and nd:
             dur = dur * 3 // 2 if nd == 1 else dur * 7 // 4
-        events.append(Ev(sysno, x, dur, (step, alter, octv), measured, small, c['text'], y, pno))
+        events.append(Ev(sysno, x, dur, (step, alter, octv), measured, small, c['text'], y, pno,
+                         how))
     for r in rests:
         x, y = r['matrix'][4], base(r)
         if r['text'] == '∑':
@@ -248,13 +334,19 @@ def beams_of(page):
 
 # --------------------------------------------------------------------------- whole document
 def read_page(args):
-    pdf_path, pno = args
+    global FICTA_POLICY
+    pdf_path, pno = args[:2]
+    if len(args) > 2:
+        FICTA_POLICY = args[2]
     with pdfplumber.open(pdf_path) as pdf:
         page = pdf.pages[pno - 1]
         staves = staves_of(page)
         systems = systems_of(page, staves)
         heads = headers_of(page, pno)
         glyphs = [c for c in page.chars if 'Maestro' in c['fontname'] and _black(c)]
+        red = [c for c in page.chars if _red(c) and (
+            ('Maestro' in c['fontname'] and c['text'] in ('b', 'n', '#', '(', ')'))
+            or ('Fughetta' in c['fontname'] and c['text'] in _FUGHETTA))]
         vlines = [l for l in page.lines if abs(l['x0'] - l['x1']) < 0.2 and _black_line(l)]
         vlines += [dict(x0=r['x0'], top=r['top'], bottom=r['bottom']) for r in page.rects
                    if r['x1'] - r['x0'] < 1.0 and r['bottom'] - r['top'] > 5 and _black(r)]
@@ -268,19 +360,21 @@ def read_page(args):
             gd = [c for c in glyphs if H - c['matrix'][5] < mid]
             gt = [c for c in glyphs if H - c['matrix'][5] >= mid]
             warns = []
-            D = read_staff(page, d_st, gd, vlines, beams, -1, pno, warns.append)
-            T = read_staff(page, t_st, gt, vlines, beams, -1, pno, warns.append)
+            rd = [c for c in red if H - c['matrix'][5] < mid]
+            rt = [c for c in red if H - c['matrix'][5] >= mid]
+            D = read_staff(page, d_st, gd, vlines, beams, -1, pno, warns.append, rd)
+            T = read_staff(page, t_st, gt, vlines, beams, -1, pno, warns.append, rt)
             out.append(('s', d_st['top'], dict(D=D, T=T, warns=warns)))
         return sorted(out, key=lambda t: t[1])
 
 
-def read(pdf_path, pages=None, workers=None):
+def read(pdf_path, pages=None, workers=None, ficta='all'):
     from concurrent.futures import ProcessPoolExecutor
     with pdfplumber.open(pdf_path) as pdf:
         n = len(pdf.pages)
     rng = list(pages or range(1, n + 1))
     with ProcessPoolExecutor(workers) as ex:
-        results = list(ex.map(read_page, [(pdf_path, p) for p in rng]))
+        results = list(ex.map(read_page, [(pdf_path, p, ficta) for p in rng]))
     pieces, cur = [], None
     for items in results:
         for kind, top, obj in items:
@@ -384,28 +478,36 @@ def write_sections(pieces, out):
     from ligature_rhythm.realise import Event
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
-    meta = {}
+    meta, ficta = {}, {}
     for p in pieces:
         secs = sections(p)
         for s in secs:
             if not (s.agree == s.pairs and s.order_bad == 0):
                 continue
-            def evs(voice, start):
+            name = f'F5_{p.no:03d}{"abcdefgh"[s.k] if len(secs) > 1 else ""}'
+
+            def evs(voice, start, vname):
                 t, r = start, []
                 for e in voice:
                     if e.pitch is not None:
                         r.append(Event(t, e.dur, e.pitch, None, e.small))
+                        if e.ficta:          # bar of 3/8 = 6 sixteenths
+                            step, alt, octv = e.pitch
+                            ficta.setdefault(name, []).append(dict(
+                                voice=vname, measure=t // 6 + 1, pitch=f'{step}{"-" * (alt < 0)}{"#" * (alt > 0)}{octv}',
+                                alter=alt, kind=e.ficta))
                     t += e.dur
                 return r
             t0 = max(0, -s.offset)
-            D, T = evs(s.D, s.offset + t0), evs(s.T, t0)
-            name = f'F5_{p.no:03d}{"abcdefgh"[s.k] if len(secs) > 1 else ""}'
+            D, T = evs(s.D, s.offset + t0, 'duplum'), evs(s.T, t0, 'tenor')
             write(out / f'{name}.xml', D, T,
                   title=f'{p.no}. F {p.folio} {p.system}: {p.title.split("[")[0].strip()}',
                   subtitle='from T. B. Payne, F fasc. 5 (DIAMM 2026)')
             meta[name] = dict(no=p.no, section=s.k, folio=p.folio, system=p.system, sub=p.sub,
                               title=p.title, page=p.page, nD=len(D), nT=len(T), pairs_checked=s.pairs)
     (out / 'index.json').write_text(json.dumps(meta, indent=1))
+    # where Payne's red apparatus set an accidental (signature, ficta), per section
+    (out / 'ficta.json').write_text(json.dumps(ficta, indent=1))
     return meta
 
 
@@ -415,8 +517,11 @@ if __name__ == '__main__':
     ap.add_argument('pdf')
     ap.add_argument('--out', default='editions_payne')
     ap.add_argument('--workers', type=int)
+    ap.add_argument('--ficta', choices=['all', 'source', 'none'], default='all',
+                    help="Payne's red accidentals and ficta: all (default), source (no bracketed "
+                         "editorial ficta), none")
     a = ap.parse_args()
-    ps = read(a.pdf, workers=a.workers)
+    ps = read(a.pdf, workers=a.workers, ficta=a.ficta)
     meta = write_sections(ps, a.out)
     n = sum(len(sections(p)) for p in ps)
     print(f'{len(ps)} pieces, {n} measured sections, {len(meta)} written (staves agree note for note)')

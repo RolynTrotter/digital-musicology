@@ -56,6 +56,7 @@ class Graph:
     breaks: list = field(default_factory=list)   # note indices: start a new system at their measure
     break_measures: list = field(default_factory=list)   # or measure numbers (used when given)
     systems_per_page: int = 5
+    splitter: object = None      # (first, last measure) -> measure to break a crowded system at
 
     @classmethod
     def from_dict(cls, d):
@@ -231,7 +232,7 @@ def annotate_mei(mei_root, graph: Graph, voice_pitches, qstamps: dict | None = N
 
     for s in graph.slurs:
         a, b = s['from'], s['to']
-        if a == b:
+        if a == b or s.get('hidden'):       # hidden: kept in the analysis, not printed
             continue
         el = etree.SubElement(_control_parent(notes[a]), _q('slur'))
         el.set(XML_ID, _nid('slur'))

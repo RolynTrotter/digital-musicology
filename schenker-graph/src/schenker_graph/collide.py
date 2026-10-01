@@ -158,3 +158,37 @@ def collisions(svg: str, pad: float = 20.0, stem_trim: float = 120.0, attach: fl
             if near > 3:
                 out.append(('slur-tie', sid, tid, tid))
     return out
+
+
+STAFF_SPACE = 180      # verovio SVG units per staff space
+
+
+def crowded_systems(svg: str, min_gap: float = 1.65):
+    """Systems whose notes are packed too tightly: on some staff, two neighbouring noteheads or
+    rests (at different onsets) less than ``min_gap`` staff spaces apart, so dots, flags and
+    accidentals collide. Returns (first measure id, last measure id, smallest gap in spaces)."""
+    root = etree.fromstring(svg.encode('utf-8') if isinstance(svg, str) else svg)
+    q = lambda el, c: [e for e in el.iter(f'{{{SVG_NS}}}g') if _cls(e) == c]
+    out = []
+    for system in q(root, 'system'):
+        measures = q(system, 'measure')
+        if not measures:
+            continue
+        rows = {}
+        for m in measures:
+            for k, staff in enumerate(e for e in m if _cls(e) == 'staff'):
+                for kind in ('notehead', 'rest'):
+                    for g in q(staff, kind):
+                        for use in g.iter(f'{{{SVG_NS}}}use'):
+                            mt = re.search(r'translate\(([-\d.]+)', use.get('transform', ''))
+                            if mt:
+                                rows.setdefault(k, set()).add(round(float(mt.group(1))))
+        worst = None
+        for xs in rows.values():
+            xs = sorted(xs)
+            gaps = [b - a for a, b in zip(xs, xs[1:]) if b - a > 0.2 * STAFF_SPACE]   # not a chord
+            if gaps:
+                worst = min(gaps) if worst is None else min(worst, min(gaps))
+        if worst is not None and worst < min_gap * STAFF_SPACE:
+            out.append((measures[0].get('id'), measures[-1].get('id'), worst / STAFF_SPACE))
+    return out

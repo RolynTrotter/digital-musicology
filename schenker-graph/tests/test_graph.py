@@ -73,3 +73,29 @@ def test_every_note_accounted_and_no_collisions(score_path, tmp_path):
     for f in files:
         if str(f).endswith('.svg'):
             assert [c for c in collisions(open(f).read()) if c[0] == 'slur-text'] == []
+
+
+def test_thin_slurs_keeps_inner_and_outer():
+    from schenker_graph.mei import Graph
+    from schenker_graph.graph import thin_slurs, unaccounted
+    # five nested slurs below the staff: 0-9 encloses 1-8 encloses 2-7 encloses 3-6 encloses 4-5
+    g = Graph(slurs=[{'from': i, 'to': 9 - i, 'place': 'below'} for i in range(5)])
+    assert thin_slurs(g, max_stack=3) == 2
+    shown = sorted((s['from'], s['to']) for s in g.slurs if not s['hidden'])
+    assert shown == [(0, 9), (3, 6), (4, 5)]            # outermost + two innermost layers
+    assert unaccounted(g, 10) == []
+
+
+def test_system_splitting_prefers_pair_boundaries():
+    from schenker_graph.graph import _make_splitter, system_load
+    notes, groups = [], []
+    for k in range(8):                                 # 8 ordines of 4 bars, 3 notes each
+        for j in range(3):
+            notes.append({'idx': len(notes), 'onset': (4 * k + j) * 1.5, 'measure': 4 * k + j + 1})
+    ordo = lambda k: {'level': 1, 'first': 3 * k, 'last': 3 * k + 2, 'children': []}
+    pair = lambda k: {'level': 2, 'first': 3 * k, 'last': 3 * k + 5, 'children': [ordo(k), ordo(k + 1)]}
+    pop = lambda k: {'level': 3, 'first': 3 * k, 'last': 3 * k + 11, 'children': [pair(k), pair(k + 2)]}
+    a = {'notes': notes, 'groups': {'level': 4, 'first': 0, 'last': 23, 'children': [pop(0), pop(4)]}}
+    split = _make_splitter(a)
+    assert split(1, 16) == 9                           # the second pair starts at m. 9
+    assert system_load(notes, [], 1, 16) == 12 + 16

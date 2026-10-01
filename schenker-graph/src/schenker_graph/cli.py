@@ -32,6 +32,13 @@ def main(argv=None):
     ap.add_argument('--upper-slurs-only', action='store_true', help='tree: no slurs inside ordines')
     ap.add_argument('--no-reference', action='store_true', help='tree: do not mark the tenor')
     ap.add_argument('--title', default=None)
+    ap.add_argument('--max-slur-stack', type=int, default=3,
+                    help='tree: most slurs printed stacked on one side of a staff; the rest are hidden '
+                         '(kept in the analysis). 0 = print all')
+    ap.add_argument('--max-system-load', type=int, default=60,
+                    help='tree: split systems holding more than this (onsets of both voices + bars); 0 = off')
+    ap.add_argument('--min-gap', type=float, default=1.65,
+                    help='split a printed system whose notes come closer than this many staff spaces')
     args = ap.parse_args(argv)
 
     graph = json.load(open(args.graph)) if args.graph else None
@@ -53,7 +60,9 @@ def main(argv=None):
     files, g, a = schenker_graph(args.score, analysis=analysis, graph=graph, out_prefix=args.out,
                                  part=args.part, stacked=stacked, middleground=mg, modules=args.modules,
                                  module_brackets=args.module_brackets, focal=not args.no_focal,
-                                 slurs=slurs, reference=not args.no_reference, formats=tuple(args.formats))
+                                 slurs=slurs, reference=not args.no_reference, formats=tuple(args.formats),
+                                 max_slur_stack=args.max_slur_stack or None,
+                                 max_system_load=args.max_system_load or None, min_gap=args.min_gap)
     fl = ' '.join(a['notes'][i]['pitch'] for i in g.fundamental)
     print(f'fundamental line: {fl}')
     for f in files:

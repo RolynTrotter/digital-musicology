@@ -84,8 +84,78 @@ def _dep_slur(k, pi, pj):
     return None
 
 
+def thin_slurs(graph: Graph, max_stack: int = 3) -> int:
+    """Hide slurs (``hidden``: kept in the graph and the analysis, not printed) where more than
+    ``max_stack`` would stack up on one side of a staff. A slur's height is 1 if it encloses no
+    other slur on its side, else 1 + the largest height it encloses. The innermost ``max_stack``
+    - 1 layers (the notes' own elaborations) and the outermost slur of each nest (the span of
+    the ordo or group) stay; the layers between are hidden. Returns the number hidden."""
+    hidden = 0
+    for place in ('above', 'below'):
+        ss = [s for s in graph.slurs if s.get('place', 'below') == place and s['from'] != s['to']]
+        span = [tuple(sorted((s['from'], s['to']))) for s in ss]
+        inside = lambda i, j: (span[j][0] <= span[i][0] and span[i][1] <= span[j][1]
+                               and span[i] != span[j])          # i inside j
+        height = {}
+        for i in sorted(range(len(ss)), key=lambda i: span[i][1] - span[i][0]):
+            height[i] = 1 + max((height[j] for j in height if inside(j, i)), default=0)
+        for i, s in enumerate(ss):
+            outer = not any(inside(i, j) for j in range(len(ss)))
+            s['hidden'] = (not outer) and height[i] >= max_stack
+            hidden += s['hidden']
+    return hidden
+
+
+def system_load(notes, ref_notes, m0, m1):
+    """How much a system from measure m0 to m1 has to hold: the distinct onsets of both voices
+    plus one per bar (barlines, rests). About 56 fits an A4 system at the default scale."""
+    on = {n['onset'] for n in list(notes) + list(ref_notes or []) if m0 <= n['measure'] <= m1}
+    return len(on) + (m1 - m0 + 1)
+
+
+def _make_splitter(a: dict):
+    """A function (m0, m1) -> the measure at which to split the system m0..m1 in two: a pair
+    boundary if one is near the middle, else an ordo boundary, cutting the fewest ordines of
+    either voice."""
+    notes = a['notes']
+    rv = a.get('reference_voice') or {}
+    ref = rv.get('notes', [])
+
+    def walk(x):
+        yield x
+        for c in x['children']:
+            yield from walk(c)
+    starts = {}
+    for x in walk(a['groups']):
+        if x['level'] in (1, 2):
+            m = notes[x['first']]['measure']
+            starts[m] = min(starts.get(m, 9), 0 if x['level'] == 2 else 1)
+    ords = [(notes[x['first']]['measure'], notes[x['last']]['measure'])
+            for x in walk(a['groups']) if x['level'] == 1]
+    if rv.get('groups'):
+        ords += [(ref[x['first']]['measure'], ref[x['last']]['measure'])
+                 for x in walk(rv['groups']) if x['level'] == 1]
+    for f, _ in ords:
+        starts.setdefault(f, 2)          # the tenor's ordo starts, last resort
+
+    def split(m0, m1):
+        total = system_load(notes, ref, m0, m1)
+        best = None
+        for m, prio in starts.items():
+            if not (m0 + 2 <= m <= m1 - 1):
+                continue
+            left, right = system_load(notes, ref, m0, m - 1), system_load(notes, ref, m, m1)
+            cut = sum(1 for f, l in ords if f < m <= l)
+            cost = 2 * prio + cut + 3 * abs(left - right) / total
+            if best is None or cost < best[0]:
+                best = (cost, m)
+        return best[1] if best else None
+    return split
+
+
 def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=True,
-                    staff=None, max_slur_level=None, pedal_stems=True, system_breaks=True) -> Graph:
+                    staff=None, max_slur_level=None, pedal_stems=True, system_breaks=True,
+                    max_slur_stack=3, max_system_load=60) -> Graph:
     """Overlays for a grouped-tree analysis (method 'tree').
 
     * fundamental line: red, stems and beam (above the duplum; below the tenor);
@@ -193,6 +263,27 @@ def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=
                 cut = lambda m: sum(1 for f, l in ords if f < m <= l)
                 chosen.append(min(cands, key=lambda m: (cut(m), abs(m - b))))
             g.break_measures = sorted(set(chosen))
+            # note spacing: a system with too much in it is split (pair, then ordo boundary);
+            # engrave() checks the printed spacing and splits further if notes still crowd
+            g.splitter = _make_splitter(a)
+            ref = (a.get('reference_voice') or {}).get('notes', [])
+            if max_system_load:
+                for _ in range(50):
+                    bounds = [1] + g.break_measures + [last_m + 1]
+                    over = [(m0, m1 - 1) for m0, m1 in zip(bounds, bounds[1:])
+                            if system_load(notes, ref, m0, m1 - 1) > max_system_load]
+                    new = [g.splitter(*mm) for mm in over]
+                    new = [m for m in new if m]
+                    if not new:
+                        break
+                    g.break_measures = sorted(set(g.break_measures + new))
+            # a short last system (a tag) joins the one before it if that still fits
+            if g.break_measures:
+                b = g.break_measures[-1]
+                prev = g.break_measures[-2] if len(g.break_measures) > 1 else 1
+                if (last_m - b + 1 <= 6 and
+                        (not max_system_load or system_load(notes, ref, prev, last_m) <= max_system_load)):
+                    g.break_measures = g.break_measures[:-1]
     if labels:
         for m in a.get('modules', []):
             g.labels.append({'at': m['first'], 'text': m['label'].replace('′', "'"), 'place': 'above', 'bold': True})
@@ -222,6 +313,9 @@ def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=
             # tenor), connections between heads outside (below)
             add_slurs(t, rv['dependencies'], 'above', 'below', tl)
         g.others.append(t)
+    if max_slur_stack:
+        for gr in [g] + g.others:
+            thin_slurs(gr, max_slur_stack)
     return g
 
 
@@ -230,15 +324,19 @@ def unaccounted(graph: Graph, n_notes: int) -> list[int]:
     a graph should be accounted for."""
     covered = set(graph.fundamental) | {k for st in graph.stems for k in st['notes']}
     for s in graph.slurs:
+        if s.get('hidden'):
+            continue
         a, b = sorted((s['from'], s['to']))
         covered.update(range(a, b + 1))
     return [k for k in range(n_notes) if k not in covered]
 
 
 def engrave(score_path, graph: Graph, voice_pitches, out_prefix, formats=('svg', 'png', 'pdf'),
-            options=None, keep_mei=True, extra_beam_staves=(), beam_voice=True, fix_labels=True):
+            options=None, keep_mei=True, extra_beam_staves=(), beam_voice=True, fix_labels=True,
+            fix_spacing=True, min_gap=1.65):
     """``extra_beam_staves``: staves (1-based) whose notes are all beamed as a line as well,
-    e.g. the 'fundamental' staff of a stacked reduction."""
+    e.g. the 'fundamental' staff of a stacked reduction. ``fix_spacing``: systems whose notes come
+    closer than ``min_gap`` staff spaces are split (see ``Graph.splitter``) and re-rendered."""
     mei = annotated_mei(score_path, graph, voice_pitches, options)
     from lxml import etree
     root = etree.fromstring(mei.encode('utf-8'))
@@ -260,9 +358,28 @@ def engrave(score_path, graph: Graph, voice_pitches, out_prefix, formats=('svg',
                               'direction': st.get('direction', 'up'), 'color': st.get('color'),
                               'length': st.get('length', 3.5)})
     pages = render(mei, graph, lines, options)
+    from .collide import collisions as _coll, crowded_systems
+    from .mei import _q as _mq, _insert_breaks
+    # note spacing: split any system whose notes are still too close, then render again
+    if fix_spacing and getattr(graph, 'splitter', None):
+        for _ in range(6):
+            root2 = etree.fromstring(mei.encode('utf-8'))
+            mnum = {m.get(xid): int(m.get('n')) for m in root2.iter(_mq('measure'))
+                    if (m.get('n') or '').isdigit()}
+            new = []
+            for pg in pages:
+                for first, last, _gap in crowded_systems(pg, min_gap):
+                    if first in mnum and last in mnum:
+                        m = graph.splitter(mnum[first], mnum[last])
+                        if m and m not in graph.break_measures:
+                            new.append(m)
+            if not new:
+                break
+            graph.break_measures = sorted(set(graph.break_measures) | set(new))
+            _insert_breaks(root2, [], graph.systems_per_page, measures=graph.break_measures)
+            mei = etree.tostring(root2, xml_declaration=True, encoding='UTF-8').decode('utf-8')
+            pages = render(mei, graph, lines, options)
     # a label that a slur runs through goes to the other side of its staff, if that is cleaner
-    from .collide import collisions as _coll
-    from .mei import _q as _mq
     def _bad(pgs):
         return {c[3] for pg in pgs for c in _coll(pg) if c[0] == 'slur-text'}
 
@@ -342,13 +459,14 @@ def schenker_graph(score_path, analysis: dict | str | None = None, graph: dict |
     elif isinstance(analysis, (str, Path)):
         analysis = json.loads(Path(analysis).read_text())
     if analysis.get('method') == 'tree':
-        auto_kw = {k: kw.pop(k) for k in list(kw) if k in ('slurs', 'labels', 'sections', 'reference', 'pedal_stems', 'max_slur_level', 'system_breaks')}
+        auto_kw = {k: kw.pop(k) for k in list(kw) if k in ('slurs', 'labels', 'sections', 'reference', 'pedal_stems', 'max_slur_level', 'system_breaks', 'max_slur_stack', 'max_system_load')}
         for k in ('middleground', 'focal', 'modules', 'label_focal', 'module_brackets'):
             kw.pop(k, None)
         g = graph_from_tree(analysis, **auto_kw)
     else:
         auto_kw = {k: kw.pop(k) for k in list(kw) if k in ('middleground', 'focal', 'modules', 'slurs', 'label_focal', 'module_brackets')}
-        for k in ('labels', 'sections', 'reference', 'pedal_stems', 'max_slur_level', 'system_breaks'):
+        for k in ('labels', 'sections', 'reference', 'pedal_stems', 'max_slur_level', 'system_breaks',
+                  'max_slur_stack', 'max_system_load'):
             kw.pop(k, None)
         g = graph_from_analysis(analysis, **auto_kw)
     if graph is not None:
@@ -359,7 +477,10 @@ def schenker_graph(score_path, analysis: dict | str | None = None, graph: dict |
             if graph.get('replace'):
                 g = Graph.from_dict({k: v for k, v in graph.items() if k != 'replace'})
             else:
+                splitter = g.splitter
                 g = Graph.from_dict({**g.to_dict(), **graph})
+                if 'break_measures' not in graph and 'breaks' not in graph:
+                    g.splitter = splitter
     pitches = [n['pitch'] for n in analysis['notes']]
     if stacked:
         # music21's ScoreReduction puts one staff per level above the score; the overlays go on

@@ -162,13 +162,50 @@ def collisions(svg: str, pad: float = 20.0, stem_trim: float = 120.0, attach: fl
 
 STAFF_SPACE = 180      # verovio SVG units per staff space
 
+# glyph boxes in staff spaces at verovio's default glyph scale (0.72), Leipzig font:
+# (width, extent above the origin, extent below it); SVG y grows downwards
+GLYPHS = {
+    'E0A2': (1.75, 0.5, 0.5), 'E0A3': (1.26, 0.5, 0.5), 'E0A4': (1.26, 0.5, 0.5),   # noteheads
+    'E260': (0.79, 1.75, 0.7), 'E261': (0.6, 1.4, 1.4), 'E262': (0.95, 1.4, 1.4),    # flat, natural, sharp
+    'E240': (1.1, 0.0, 3.3), 'E241': (1.1, 3.3, 0.0),                                 # 8th flags up/down
+    'E242': (1.1, 0.0, 3.3), 'E243': (1.1, 3.3, 0.0),
+    'E4E4': (1.3, 0.6, 0.1), 'E4E5': (1.22, 1.5, 1.5), 'E4E6': (1.0, 1.0, 1.0),       # rests
+}
 
-def crowded_systems(svg: str, min_gap: float = 1.65):
-    """Systems whose notes are packed too tightly: on some staff, two neighbouring noteheads or
-    rests (at different onsets) less than ``min_gap`` staff spaces apart, so dots, flags and
-    accidentals collide. Returns (first measure id, last measure id, smallest gap in spaces)."""
+
+ACCIDENTALS = {'E260', 'E261', 'E262'}
+
+
+def _event_boxes(event):
+    """Boxes (x0, x1, y0, y1, kind) of the glyphs and dots of one note or rest; kind is 'accid',
+    'dot', 'flag', 'head' or 'rest'."""
+    out = []
+    for use in event.iter(f'{{{SVG_NS}}}use'):
+        href = use.get('{http://www.w3.org/1999/xlink}href', '')
+        code = href.lstrip('#').split('-')[0]
+        mt = re.search(r'translate\(([-\d.]+),\s*([-\d.]+)\)\s*scale\(([-\d.]+)', use.get('transform', ''))
+        if not mt or code not in GLYPHS:
+            continue
+        x, y, sc = float(mt.group(1)), float(mt.group(2)), float(mt.group(3))
+        w, up, down = (v * STAFF_SPACE * sc / 0.72 for v in GLYPHS[code])
+        kind = ('accid' if code in ACCIDENTALS else 'flag' if code.startswith('E24')
+                else 'rest' if code.startswith('E4E') else 'head')
+        out.append((x, x + w, y - up, y + down, kind))
+    for e in event.iter(f'{{{SVG_NS}}}ellipse'):
+        cx, cy, rx = float(e.get('cx')), float(e.get('cy')), float(e.get('rx'))
+        out.append((cx - rx, cx + rx, cy - rx, cy + rx, 'dot'))
+    return out
+
+
+def crowded_systems(svg: str, min_gap: float = 1.65, pad: float = 0.12):
+    """Systems whose notes are packed too tightly. On some staff either two neighbouring
+    noteheads or rests (at different onsets) are less than ``min_gap`` staff spaces apart, or the
+    glyphs of neighbouring notes touch: an accidental within ``pad`` staff spaces of the note
+    before it (its notehead, flag or dot), or a dot of one note within ``pad`` of the next. Returns (first measure id, last measure id, smallest
+    notehead gap in staff spaces)."""
     root = etree.fromstring(svg.encode('utf-8') if isinstance(svg, str) else svg)
-    q = lambda el, c: [e for e in el.iter(f'{{{SVG_NS}}}g') if _cls(e) == c]
+    q = lambda el, c: [e for e in el.iter(f'{{{SVG_NS}}}g') if c in _cls(e)]
+    P = pad * STAFF_SPACE
     out = []
     for system in q(root, 'system'):
         measures = q(system, 'measure')
@@ -176,19 +213,31 @@ def crowded_systems(svg: str, min_gap: float = 1.65):
             continue
         rows = {}
         for m in measures:
-            for k, staff in enumerate(e for e in m if _cls(e) == 'staff'):
-                for kind in ('notehead', 'rest'):
-                    for g in q(staff, kind):
-                        for use in g.iter(f'{{{SVG_NS}}}use'):
-                            mt = re.search(r'translate\(([-\d.]+)', use.get('transform', ''))
-                            if mt:
-                                rows.setdefault(k, set()).add(round(float(mt.group(1))))
-        worst = None
-        for xs in rows.values():
-            xs = sorted(xs)
-            gaps = [b - a for a, b in zip(xs, xs[1:]) if b - a > 0.2 * STAFF_SPACE]   # not a chord
+            for k, staff in enumerate(e for e in m if 'staff' in _cls(e)):
+                for ev in q(staff, 'note') + q(staff, 'rest'):
+                    if 'note' in _cls(ev) and ev.getparent() is not None \
+                            and 'chord' in _cls(ev.getparent()):
+                        continue
+                    boxes = _event_boxes(ev)
+                    heads = [b for b in boxes if b[4] in ('head', 'rest')] or boxes
+                    if boxes:
+                        rows.setdefault(k, []).append((min(b[0] for b in heads), boxes))
+        worst, touch = None, False
+        for evs in rows.values():
+            evs.sort(key=lambda t: t[0])
+            xs = sorted({round(x) for x, _ in evs})
+            gaps = [b - a for a, b in zip(xs, xs[1:]) if b - a > 0.2 * STAFF_SPACE]
             if gaps:
                 worst = min(gaps) if worst is None else min(worst, min(gaps))
-        if worst is not None and worst < min_gap * STAFF_SPACE:
-            out.append((measures[0].get('id'), measures[-1].get('id'), worst / STAFF_SPACE))
+            for (xa, ba), (xb, bb) in zip(evs, evs[1:]):
+                if abs(xb - xa) < 0.2 * STAFF_SPACE:
+                    continue
+                # an accidental running into the note before it, or a dot into the note after
+                # it (verovio keeps noteheads and flags apart itself, not these)
+                if any(a[0] < b[1] + P and b[0] < a[1] + P and a[2] < b[3] + P and b[2] < a[3] + P
+                       for a in ba for b in bb if b[4] == 'accid' or a[4] == 'dot'):
+                    touch = True
+        if touch or (worst is not None and worst < min_gap * STAFF_SPACE):
+            out.append((measures[0].get('id'), measures[-1].get('id'),
+                        (worst or 0) / STAFF_SPACE))
     return out

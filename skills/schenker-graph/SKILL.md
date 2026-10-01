@@ -55,7 +55,8 @@ his own reading.
 | Red noteheads, stems and beam | the tenor's line at the same level | beam below the tenor |
 | Blue noteheads | heads of ordines and pairs (middleground) | both voices |
 | Grey-blue slurs | the reduction inside each ordo (foreground): each note slurred to the notes it lies between or leads to | between the staves: below the duplum, above the tenor |
-| Blue slurs | how ordo heads connect inside pairs and pairs of pairs | outside: above the duplum, below the tenor |
+| Blue slurs | how ordo heads connect inside pairs | outside: above the duplum, below the tenor |
+| Blue notes with long sub-stems (5.5 spaces; up on the duplum, down on the tenor) | the top level of connections: pair heads within each pair of pairs, drawn as stems instead of slurs (Schenker's middleground stems) | both voices |
 | Blue notes with long up-stems | the piece's pedal pitch (e.g. Dom 3's upper pedal F) at each ordo head where it recurs; slurs attach at the stem tip | duplum |
 | Bold letters (a, a', b …, tag) | pair (module) labels | above |
 | Italic text | home note, pedal pitch and stepwise line of each pair of pairs (two lines) | below the duplum |
@@ -68,8 +69,8 @@ is always cut there). The source's own system and page breaks are dropped.
 **Note spacing.** A system may hold at most `max_system_load` (default 60: distinct onsets of both
 voices plus one per bar). Fuller systems are split at a pair boundary near the middle, else at an
 ordo boundary, cutting the fewest ordines. After rendering, any system where two neighbouring
-notes or rests on a staff are closer than `min_gap` (1.65 staff spaces) is split again and
-re-rendered. A last system of six bars or fewer (a tag) joins the one before it if it fits.
+notes or rests on a staff are closer than `min_gap` (1.65 staff spaces), or where an accidental
+runs into the note before it (its head, flag or dot), is split again and re-rendered. A last system of six bars or fewer (a tag) joins the one before it if it fits.
 
 **Slur stacking.** At most `max_slur_stack` (default 3) slurs are printed stacked on one side of a
 staff. The outermost slur of each nest (the span of the ordo or group) and the two innermost
@@ -77,12 +78,17 @@ layers (each note's own elaboration) stay; the layers between get `hidden: true`
 stay in the analysis and the graph spec, and every note is still under a printed slur. Alex asked
 for this (no. 71, m. 74 had five or six levels). `max_slur_stack=None` prints them all.
 
-Options: `--max-slur-stack N` (0 = print all), `--max-system-load N` (0 = off), `--min-gap S`,
+**Sub-stems.** The top level of connections (the fundamental line's level, normally the pair
+heads inside each pair of pairs) is drawn as sub-stems on the notes it joins, not as slurs
+(`substems=True`, `substem_length=5.5`; `--no-substems` for slurs). Pedal stems are 4.5 spaces.
+Levels at or below the ordo are never sub-stemmed.
+
+Options: `--no-substems`, `--max-slur-stack N` (0 = print all), `--max-system-load N` (0 = off), `--min-gap S`,
 `--upper-slurs-only` (drop the foreground slurs), `--no-slurs`, `--no-reference` (leave
 the tenor unmarked), `--ligatures` (analyse with ligatures first), `--stacked fundamental pair
 ordo` (reduction staves above the score, from music21's `ScoreReduction`, top staff beamed),
 `--title`. In Python, `graph_from_tree(a, max_slur_level=…, pedal_stems=…, system_breaks=…,
-max_slur_stack=…, max_system_load=…)` and `engrave(…, fix_spacing=…, min_gap=…)`.
+max_slur_stack=…, max_system_load=…, substems=…, substem_length=…)` and `engrave(…, fix_spacing=…, min_gap=…)`.
 
 For a flat analysis (`method='mop'`), the older overlays apply: fundamental line, middleground by
 span, parent-interval slurs, dashed focal-pitch slurs, module letters with transposition;

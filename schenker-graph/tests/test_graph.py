@@ -99,3 +99,21 @@ def test_system_splitting_prefers_pair_boundaries():
     split = _make_splitter(a)
     assert split(1, 16) == 9                           # the second pair starts at m. 9
     assert system_load(notes, [], 1, 16) == 12 + 16
+
+
+def _svg(notes):
+    """A one-system, one-staff SVG: notes = [(x, glyph codes)] with glyphs at y=1000."""
+    uses = lambda codes, x: ''.join(
+        f'<use xlink:href="#{c}-a" transform="translate({x + dx}, 1000) scale(0.72, 0.72)"/>'
+        for c, dx in codes)
+    body = ''.join(f'<g class="note">{uses(codes, x)}</g>' for x, codes in notes)
+    return ('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">'
+            f'<g class="system"><g class="measure" id="m1"><g class="staff">{body}</g></g></g></svg>')
+
+
+def test_crowded_systems_sees_a_flat_running_into_the_note_before():
+    from schenker_graph.collide import crowded_systems
+    roomy = _svg([(0, [('E0A4', 0)]), (600, [('E260', -160), ('E0A4', 0)])])
+    tight = _svg([(0, [('E0A4', 0)]), (380, [('E260', -160), ('E0A4', 0)])])
+    assert crowded_systems(roomy) == []
+    assert crowded_systems(tight) and crowded_systems(tight)[0][0] == 'm1'

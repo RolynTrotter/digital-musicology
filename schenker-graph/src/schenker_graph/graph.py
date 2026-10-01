@@ -155,7 +155,8 @@ def _make_splitter(a: dict):
 
 def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=True,
                     staff=None, max_slur_level=None, pedal_stems=True, system_breaks=True,
-                    max_slur_stack=3, max_system_load=60) -> Graph:
+                    max_slur_stack=3, max_system_load=60, substems=True,
+                    substem_length=5.5) -> Graph:
     """Overlays for a grouped-tree analysis (method 'tree').
 
     * fundamental line: red, stems and beam (above the duplum; below the tenor);
@@ -165,6 +166,9 @@ def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=
       the fundamental line's level; higher connections are what the beam shows).
       ``slurs='upper'`` keeps only the slurs above, ``None`` none. On the tenor only the
       connections between pair heads are slurred;
+    * ``substems``: the top level of connections (the fundamental line's level) is drawn as
+      sub-stems (``substem_length`` staff spaces, up on the duplum, down on the tenor) on the
+      notes it joins, instead of slurs;
     * labels: the pair (module) letters above the staff, and at each pair of pairs its home note
       and pedal pitch below it.
     """
@@ -176,13 +180,19 @@ def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=
     g.middleground = [n['idx'] for n in notes if n['level'] >= 1 and n['idx'] not in fset]
     g.colors.setdefault('foreground', '#7a8fa8')
 
-    def add_slurs(target, deps, lower_place, upper_place, keep_levels):
-        seen = {}
+    def add_slurs(target, deps, lower_place, upper_place, keep_levels, stem_level=None,
+                  stem_dir='up'):
+        """Slurs for the dependencies at ``keep_levels``; those at ``stem_level`` (the top level)
+        become sub-stems on the notes they join instead (Schenker's middleground stems)."""
+        seen, stemmed = {}, set()
         for d in deps:
             if d['level'] not in keep_levels:
                 continue
             sl = _dep_slur(d['note'], *d['parent'])
             if sl is None or sl[0] == sl[1]:
+                continue
+            if d['level'] == stem_level:
+                stemmed.update(sl)
                 continue
             seen[sl] = max(seen.get(sl, 0), d['level'])
         for (x, y), lev in sorted(seen.items()):
@@ -192,12 +202,18 @@ def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=
             else:
                 target.slurs.append({'from': x, 'to': y, 'style': 'solid', 'place': upper_place,
                                      'color': target.colors['slur']})
+        stemmed -= set(target.fundamental)
+        if stemmed:
+            target.middleground = sorted(set(target.middleground) | stemmed)
+            target.stems.append({'notes': sorted(stemmed), 'direction': stem_dir,
+                                 'length': substem_length, 'kind': 'substem'})
 
     top_slur = max_slur_level or a['fundamental'].get('level', 3)
     levels_all = {d['level'] for d in a['dependencies'] if d['level'] <= top_slur}
     if slurs:
         keep = levels_all if slurs == 'all' else {L for L in levels_all if L >= 2}
-        add_slurs(g, a['dependencies'], 'below', 'above', keep)
+        add_slurs(g, a['dependencies'], 'below', 'above', keep,
+                  stem_level=top_slur if substems and top_slur >= 2 else None, stem_dir='up')
 
     if pedal_stems:
         # the piece's pedal: the pitch that is the pedal of the most pairs of pairs (at least two);
@@ -311,7 +327,8 @@ def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=
                 tl = {L for L in tl if L >= 2}
             # mirror of the duplum: the foreground inside each ordo between the staves (above the
             # tenor), connections between heads outside (below)
-            add_slurs(t, rv['dependencies'], 'above', 'below', tl)
+            add_slurs(t, rv['dependencies'], 'above', 'below', tl,
+                      stem_level=top_slur if substems and top_slur >= 2 else None, stem_dir='down')
         g.others.append(t)
     if max_slur_stack:
         for gr in [g] + g.others:
@@ -459,14 +476,14 @@ def schenker_graph(score_path, analysis: dict | str | None = None, graph: dict |
     elif isinstance(analysis, (str, Path)):
         analysis = json.loads(Path(analysis).read_text())
     if analysis.get('method') == 'tree':
-        auto_kw = {k: kw.pop(k) for k in list(kw) if k in ('slurs', 'labels', 'sections', 'reference', 'pedal_stems', 'max_slur_level', 'system_breaks', 'max_slur_stack', 'max_system_load')}
+        auto_kw = {k: kw.pop(k) for k in list(kw) if k in ('slurs', 'labels', 'sections', 'reference', 'pedal_stems', 'max_slur_level', 'system_breaks', 'max_slur_stack', 'max_system_load', 'substems', 'substem_length')}
         for k in ('middleground', 'focal', 'modules', 'label_focal', 'module_brackets'):
             kw.pop(k, None)
         g = graph_from_tree(analysis, **auto_kw)
     else:
         auto_kw = {k: kw.pop(k) for k in list(kw) if k in ('middleground', 'focal', 'modules', 'slurs', 'label_focal', 'module_brackets')}
         for k in ('labels', 'sections', 'reference', 'pedal_stems', 'max_slur_level', 'system_breaks',
-                  'max_slur_stack', 'max_system_load'):
+                  'max_slur_stack', 'max_system_load', 'substems', 'substem_length'):
             kw.pop(k, None)
         g = graph_from_analysis(analysis, **auto_kw)
     if graph is not None:

@@ -37,6 +37,8 @@ def main(argv=None):
                          '(kept in the analysis). 0 = print all')
     ap.add_argument('--max-system-load', type=int, default=60,
                     help='tree: split systems holding more than this (onsets of both voices + bars); 0 = off')
+    ap.add_argument('--no-substems', action='store_true',
+                    help='tree: draw the top level of connections as slurs, not sub-stems')
     ap.add_argument('--min-gap', type=float, default=1.65,
                     help='split a printed system whose notes come closer than this many staff spaces')
     args = ap.parse_args(argv)
@@ -62,7 +64,8 @@ def main(argv=None):
                                  module_brackets=args.module_brackets, focal=not args.no_focal,
                                  slurs=slurs, reference=not args.no_reference, formats=tuple(args.formats),
                                  max_slur_stack=args.max_slur_stack or None,
-                                 max_system_load=args.max_system_load or None, min_gap=args.min_gap)
+                                 max_system_load=args.max_system_load or None, min_gap=args.min_gap,
+                                 substems=not args.no_substems)
     fl = ' '.join(a['notes'][i]['pitch'] for i in g.fundamental)
     print(f'fundamental line: {fl}')
     for f in files:

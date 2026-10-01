@@ -146,13 +146,16 @@ def read_staff(page, staff, glyphs, vlines, beams, sysno, pno, warn):
     heads = sorted([c for c in mine if c['text'] in ('œ', '˙', 'w') and c['matrix'][4] > cx + 5],
                    key=lambda c: c['matrix'][4])
     first_x = heads[0]['matrix'][4] if heads else 1e9
-    # key signature: flats between clef and first note, close to the clef
-    keysig = set()
+    # key signature: flats or sharps between clef and first note, close to the clef
+    keysig, keysig_glyphs = {}, set()          # step -> alter (flats, and sharps, e.g. F#)
     for c in mine:
-        if c['text'] == 'b' and cx < c['matrix'][4] < min(cx + 30, first_x - 3):
-            keysig.add(pitch_at(base(c))[0])
+        if c['text'] in ('b', '#') and cx < c['matrix'][4] < min(cx + 30, first_x - 3):
+            keysig[pitch_at(base(c))[0]] = -1 if c['text'] == 'b' else 1
+            keysig_glyphs.add(id(c))
+    # accidentals: not the key signature's flats (a signature flat on the B line just before a
+    # system's first note is not that note's accidental)
     accs = [c for c in mine if c['text'] in ('b', 'n', '#') and c['matrix'][4] > cx + 5
-            and c['size'] > 12]
+            and c['size'] > 12 and id(c) not in keysig_glyphs]
     dots = [c for c in mine if c['text'] == '.' and c['size'] > 8]
     flags = [c for c in mine if c['text'] in ('J', 'j')]
     rests = [c for c in mine if c['text'] in ('Œ', '‰', '∑') and c['matrix'][4] > cx + 5]
@@ -163,10 +166,11 @@ def read_staff(page, staff, glyphs, vlines, beams, sysno, pno, warn):
         small = c['size'] < 13
         w = 7.0 * c['size'] / 16.8          # notehead width
         step, octv = pitch_at(y)
-        alter = -1 if step in keysig else 0
+        alter = keysig.get(step, 0)
         for a in accs:
             ax, ay = a['matrix'][4], base(a)
-            if x - 12 < ax < x - 1 and abs(ay - y) < half * 1.2:
+            # an accidental belongs to a note on its own line or space
+            if x - 12 < ax < x - 1 and abs(ay - y) < half * 1.2 and pitch_at(ay) == (step, octv):
                 alter = {'b': -1, 'n': 0, '#': 1}[a['text']]
         # stem: a vertical line touching the notehead at its left or right edge
         stem = None

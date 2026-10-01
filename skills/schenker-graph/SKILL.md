@@ -42,10 +42,13 @@ his own reading.
    `schenker_graph.collide.collisions(svg)` lists slurs running through labels, beams, stems (away
    from the note the slur ends on) or ties; engraving already moves colliding labels to the other
    side or further out, so anything left needs a look. `collide.crowded_systems(svg)` lists
-   systems whose notes are too close together (engraving already splits them). Then Read every PNG: the beam continuous
-   from the first fundamental note to the last, across pages; stems on the right noteheads.
+   systems whose notes are too close together (engraving already splits them). Then Read every PNG:
+   the beam continuous from the first fundamental note to the last, across pages; stems on the
+   right noteheads. If a pitch looks wrong (a C-flat, an A-flat), check the source edition page
+   before analysing further.
 4. **Deliver** the PDF (and PNGs if they want to paste them), and list the fundamental line,
-   home notes and pedals in the reply with measure numbers.
+   home notes and pedals in the reply with measure numbers. When Alex may be annotating earlier
+   PDFs, write new versions to a new folder (e.g. `v2/`) rather than over his copies.
 
 ## What is drawn (defaults, for a tree analysis)
 
@@ -70,7 +73,8 @@ is always cut there). The source's own system and page breaks are dropped.
 voices plus one per bar). Fuller systems are split at a pair boundary near the middle, else at an
 ordo boundary, cutting the fewest ordines. After rendering, any system where two neighbouring
 notes or rests on a staff are closer than `min_gap` (1.65 staff spaces), or where an accidental
-runs into the note before it (its head, flag or dot), is split again and re-rendered. A last system of six bars or fewer (a tag) joins the one before it if it fits.
+runs into the note before it (its head, flag or dot), is split again and re-rendered. A last
+system of six bars or fewer (a tag) joins the one before it if it fits.
 
 **Slur stacking.** At most `max_slur_stack` (default 3) slurs are printed stacked on one side of a
 staff. The outermost slur of each nest (the span of the ordo or group) and the two innermost
@@ -83,12 +87,13 @@ heads inside each pair of pairs) is drawn as sub-stems on the notes it joins, no
 (`substems=True`, `substem_length=5.5`; `--no-substems` for slurs). Pedal stems are 4.5 spaces.
 Levels at or below the ordo are never sub-stemmed.
 
-Options: `--no-substems`, `--max-slur-stack N` (0 = print all), `--max-system-load N` (0 = off), `--min-gap S`,
-`--upper-slurs-only` (drop the foreground slurs), `--no-slurs`, `--no-reference` (leave
-the tenor unmarked), `--ligatures` (analyse with ligatures first), `--stacked fundamental pair
-ordo` (reduction staves above the score, from music21's `ScoreReduction`, top staff beamed),
+Options: `--no-substems`, `--max-slur-stack N` (0 = print all), `--max-system-load N` (0 = off),
+`--min-gap S`, `--upper-slurs-only` (drop the foreground slurs), `--no-slurs`, `--no-reference`
+(leave the tenor unmarked), `--ligatures` (analyse with ligatures first), `--stacked fundamental
+pair ordo` (reduction staves above the score, from music21's `ScoreReduction`, top staff beamed),
 `--title`. In Python, `graph_from_tree(a, max_slur_level=…, pedal_stems=…, system_breaks=…,
-max_slur_stack=…, max_system_load=…, substems=…, substem_length=…)` and `engrave(…, fix_spacing=…, min_gap=…)`.
+max_slur_stack=…, max_system_load=…, substems=…, substem_length=…)` and
+`engrave(…, fix_spacing=…, min_gap=…)`.
 
 For a flat analysis (`method='mop'`), the older overlays apply: fundamental line, middleground by
 span, parent-interval slurs, dashed focal-pitch slurs, module letters with transposition;

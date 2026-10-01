@@ -76,18 +76,20 @@ notes or rests on a staff are closer than `min_gap` (1.65 staff spaces), or wher
 runs into the note before it (its head, flag or dot), is split again and re-rendered. A last
 system of six bars or fewer (a tag) joins the one before it if it fits.
 
-**Slur stacking.** At most `max_slur_stack` (default 3) slurs are printed stacked on one side of a
-staff. The outermost slur of each nest (the span of the ordo or group) and the two innermost
-layers (each note's own elaboration) stay; the layers between get `hidden: true`. Hidden slurs
-stay in the analysis and the graph spec, and every note is still under a printed slur. Alex asked
-for this (no. 71, m. 74 had five or six levels). `max_slur_stack=None` prints them all.
+**Slur stacking.** At most `max_slur_stack` (default 2) slurs are printed stacked on one side of a
+staff, and they are the background-most ones: a slur enclosed by two or more others on its side
+gets `hidden: true`. Hidden slurs stay in the analysis and the graph spec, and every note is
+still under a printed slur (the outermost slur of each nest is kept). Alex asked for this (no. 71,
+m. 74 had five or six levels; then "only the background-most two layers").
+`thin_slurs(g, max_stack, keep='inner+outer')` keeps the outermost and the innermost layers
+instead; `max_slur_stack=None` prints them all.
 
 **Sub-stems.** The top level of connections (the fundamental line's level, normally the pair
 heads inside each pair of pairs) is drawn as sub-stems on the notes it joins, not as slurs
 (`substems=True`, `substem_length=5.5`; `--no-substems` for slurs). Pedal stems are 4.5 spaces.
 Levels at or below the ordo are never sub-stemmed.
 
-Options: `--no-substems`, `--max-slur-stack N` (0 = print all), `--max-system-load N` (0 = off),
+Options: `--no-substems`, `--max-slur-stack N` (default 2; 0 = print all), `--max-system-load N` (0 = off),
 `--min-gap S`, `--upper-slurs-only` (drop the foreground slurs), `--no-slurs`, `--no-reference`
 (leave the tenor unmarked), `--ligatures` (analyse with ligatures first), `--stacked fundamental
 pair ordo` (reduction staves above the score, from music21's `ScoreReduction`, top staff beamed),

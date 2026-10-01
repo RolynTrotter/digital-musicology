@@ -75,15 +75,18 @@ def test_every_note_accounted_and_no_collisions(score_path, tmp_path):
             assert [c for c in collisions(open(f).read()) if c[0] == 'slur-text'] == []
 
 
-def test_thin_slurs_keeps_inner_and_outer():
+def test_thin_slurs_keeps_background_layers():
     from schenker_graph.mei import Graph
     from schenker_graph.graph import thin_slurs, unaccounted
+    nest = lambda: [{'from': i, 'to': 9 - i, 'place': 'below'} for i in range(5)]
     # five nested slurs below the staff: 0-9 encloses 1-8 encloses 2-7 encloses 3-6 encloses 4-5
-    g = Graph(slurs=[{'from': i, 'to': 9 - i, 'place': 'below'} for i in range(5)])
-    assert thin_slurs(g, max_stack=3) == 2
-    shown = sorted((s['from'], s['to']) for s in g.slurs if not s['hidden'])
-    assert shown == [(0, 9), (3, 6), (4, 5)]            # outermost + two innermost layers
+    g = Graph(slurs=nest())
+    assert thin_slurs(g, max_stack=2) == 3
+    assert sorted((s['from'], s['to']) for s in g.slurs if not s['hidden']) == [(0, 9), (1, 8)]
     assert unaccounted(g, 10) == []
+    g = Graph(slurs=nest())
+    assert thin_slurs(g, max_stack=3, keep='inner+outer') == 2
+    assert sorted((s['from'], s['to']) for s in g.slurs if not s['hidden']) == [(0, 9), (3, 6), (4, 5)]
 
 
 def test_system_splitting_prefers_pair_boundaries():

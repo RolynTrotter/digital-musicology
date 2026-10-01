@@ -84,24 +84,33 @@ def _dep_slur(k, pi, pj):
     return None
 
 
-def thin_slurs(graph: Graph, max_stack: int = 3) -> int:
-    """Hide slurs (``hidden``: kept in the graph and the analysis, not printed) where more than
-    ``max_stack`` would stack up on one side of a staff. A slur's height is 1 if it encloses no
-    other slur on its side, else 1 + the largest height it encloses. The innermost ``max_stack``
-    - 1 layers (the notes' own elaborations) and the outermost slur of each nest (the span of
-    the ordo or group) stay; the layers between are hidden. Returns the number hidden."""
+def thin_slurs(graph: Graph, max_stack: int = 2, keep: str = 'outer') -> int:
+    """Hide slurs (``hidden``: kept in the graph and the analysis, not printed) so that at most
+    ``max_stack`` are stacked on one side of a staff.
+
+    ``keep='outer'`` (default): the background-most layers stay. A slur's depth is 1 if no other
+    slur on its side encloses it, else 1 + the largest depth of those that do; slurs deeper than
+    ``max_stack`` (the innermost, most local elaborations) are hidden. Every note stays under a
+    printed slur, since the outermost slur of each nest is kept.
+    ``keep='inner+outer'``: the outermost slur of each nest and the innermost ``max_stack`` - 1
+    layers stay, and the layers between are hidden. Returns the number hidden."""
     hidden = 0
     for place in ('above', 'below'):
         ss = [s for s in graph.slurs if s.get('place', 'below') == place and s['from'] != s['to']]
         span = [tuple(sorted((s['from'], s['to']))) for s in ss]
         inside = lambda i, j: (span[j][0] <= span[i][0] and span[i][1] <= span[j][1]
                                and span[i] != span[j])          # i inside j
-        height = {}
-        for i in sorted(range(len(ss)), key=lambda i: span[i][1] - span[i][0]):
+        order = sorted(range(len(ss)), key=lambda i: span[i][1] - span[i][0])
+        height, depth = {}, {}
+        for i in order:                                         # short to long
             height[i] = 1 + max((height[j] for j in height if inside(j, i)), default=0)
+        for i in reversed(order):                               # long to short
+            depth[i] = 1 + max((depth[j] for j in depth if inside(i, j)), default=0)
         for i, s in enumerate(ss):
-            outer = not any(inside(i, j) for j in range(len(ss)))
-            s['hidden'] = (not outer) and height[i] >= max_stack
+            if keep == 'outer':
+                s['hidden'] = depth[i] > max_stack
+            else:
+                s['hidden'] = depth[i] > 1 and height[i] >= max_stack
             hidden += s['hidden']
     return hidden
 
@@ -155,7 +164,7 @@ def _make_splitter(a: dict):
 
 def graph_from_tree(a: dict, slurs='all', labels=True, sections=True, reference=True,
                     staff=None, max_slur_level=None, pedal_stems=True, system_breaks=True,
-                    max_slur_stack=3, max_system_load=60, substems=True,
+                    max_slur_stack=2, max_system_load=60, substems=True,
                     substem_length=5.5) -> Graph:
     """Overlays for a grouped-tree analysis (method 'tree').
 

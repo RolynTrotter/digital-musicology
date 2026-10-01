@@ -32,9 +32,9 @@ def main(argv=None):
     ap.add_argument('--upper-slurs-only', action='store_true', help='tree: no slurs inside ordines')
     ap.add_argument('--no-reference', action='store_true', help='tree: do not mark the tenor')
     ap.add_argument('--title', default=None)
-    ap.add_argument('--max-slur-stack', type=int, default=3,
-                    help='tree: most slurs printed stacked on one side of a staff; the rest are hidden '
-                         '(kept in the analysis). 0 = print all')
+    ap.add_argument('--max-slur-stack', type=int, default=2,
+                    help='tree: most slurs printed stacked on one side of a staff, keeping the outermost '
+                         '(background) layers; the rest are hidden (kept in the analysis). 0 = print all')
     ap.add_argument('--max-system-load', type=int, default=60,
                     help='tree: split systems holding more than this (onsets of both voices + bars); 0 = off')
     ap.add_argument('--no-substems', action='store_true',

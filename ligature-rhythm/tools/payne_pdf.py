@@ -77,6 +77,7 @@ class Ev:
     page: int = 0
     ficta: str = ''                # how the alter was set, if not by the black text: 'sig-red',
                                    # 'red', 'concordance', 'cautionary', 'editorial'
+    elong: bool = False            # Payne's red rectangle above it: an elongated note shape in F
 
 
 @dataclass
@@ -244,7 +245,8 @@ def read_staff(page, staff, glyphs, vlines, beams, sysno, pno, warn, red=()):
             and c['size'] > 12 and id(c) not in keysig_glyphs]
     dots = [c for c in mine if c['text'] == '.' and c['size'] > 8]
     flags = [c for c in mine if c['text'] in ('J', 'j')]
-    rests = [c for c in mine if c['text'] in ('Œ', '‰', '∑') and c['matrix'][4] > cx + 5]
+    # rests: quarter (Œ), eighth (‰), half (U+F0EE, a block on the middle line), multi-measure (∑)
+    rests = [c for c in mine if c['text'] in ('Œ', '‰', '∑', '\uf0ee') and c['matrix'][4] > cx + 5]
 
     # red accidentals in the staff that stand right before a note of their pitch
     attached = {id(a) for a in redmine for h in heads
@@ -268,6 +270,9 @@ def read_staff(page, staff, glyphs, vlines, beams, sysno, pno, warn, red=()):
         alter, how = _red_alter(redmine, x, y, w, step, octv, alter, how, staff, sp, half, base,
                                 pitch_at, cx, first_x, attached)
         how = '' if how == 'black' else how
+        # Payne's red rectangle over the note: its shape is elongated in the source
+        elong = any(m['text'] == '∑' and 'Maestro' in m['fontname'] and abs(m['matrix'][4] - x) < 4.5
+                    and base(m) <= y + half for m in red if lo <= base(m) <= hi)
         # stem: a vertical line touching the notehead at its left or right edge
         stem = None
         for v in vlines:
@@ -302,13 +307,13 @@ def read_staff(page, staff, glyphs, vlines, beams, sysno, pno, warn, red=()):
         if measured and nd:
             dur = dur * 3 // 2 if nd == 1 else dur * 7 // 4
         events.append(Ev(sysno, x, dur, (step, alter, octv), measured, small, c['text'], y, pno,
-                         how))
+                         how, elong))
     for r in rests:
         x, y = r['matrix'][4], base(r)
         if r['text'] == '∑':
             events.append(Ev(sysno, x, 0, None, False, False, '∑', y, pno))
             continue
-        dur = 4 if r['text'] == 'Œ' else 2
+        dur = {'Œ': 4, '\uf0ee': 8}.get(r['text'], 2)
         rw = 6.0
         nd = sum(1 for d in dots if x + 2 < d['matrix'][4] < x + rw + 6 and abs(base(d) - y) < sp * 2.5)
         if nd:
@@ -356,7 +361,7 @@ def read_page(args):
         heads = headers_of(page, pno)
         glyphs = [c for c in page.chars if 'Maestro' in c['fontname'] and _black(c)]
         red = [c for c in page.chars if _red(c) and (
-            ('Maestro' in c['fontname'] and c['text'] in ('b', 'n', '#', '(', ')'))
+            ('Maestro' in c['fontname'] and c['text'] in ('b', 'n', '#', '(', ')', '∑'))
             or ('Fughetta' in c['fontname'] and c['text'] in _FUGHETTA))]
         vlines = [l for l in page.lines if abs(l['x0'] - l['x1']) < 0.2 and _black_line(l)]
         vlines += [dict(x0=r['x0'], top=r['top'], bottom=r['bottom']) for r in page.rects
@@ -489,44 +494,155 @@ def sections(piece, min_t=3, min_d=6):
 
 
 # --------------------------------------------------------------------------- command line
+BAR = 6        # a 3/8 bar in sixteenths
+ELONGATIONS = 'extend'   # 'extend': an elongated note (red rectangle) followed by a rest takes the
+                         # rest's value (a duplex long: dotted half); 'payne': as Payne prints it
+UNMEASURED_STEP = 2      # nominal value of an unmeasured duplum note (a breve, eighth)
+
+
+def _layout_gap(D, T, t0):
+    """Lay out a stretch the edition leaves unmeasured (an organal opening or close, or a passage
+    between two discant sections): duplum notes in order, unmeasured ones a breve each; tenor
+    notes start with the first duplum event at or after them on the page and last until the next
+    tenor note. Returns duplum and tenor (event, onset, duration) lists and the end time."""
+    dl, t = [], t0
+    for e in D:
+        d = e.dur if e.measured and e.dur else UNMEASURED_STEP
+        dl.append((e, t, d))
+        t += d
+    end = t
+    tl = []
+    for e in T:
+        on = next((o for d, o, _ in dl if _key(d) >= (e.sys, e.x - 4.0)), None)
+        if on is None:
+            on = max(end, tl[-1][1] + BAR if tl else t0)
+            end = on + (e.dur if e.measured and e.dur else BAR)
+        tl.append([e, on, 0])
+    for i, x in enumerate(tl):
+        nxt = tl[i + 1][1] if i + 1 < len(tl) else None
+        x[2] = (nxt - x[1]) if nxt is not None and nxt > x[1] else max(end - x[1], BAR)
+        end = max(end, x[1] + x[2])
+    end += (-end) % BAR
+    return dl, [tuple(x) for x in tl], end
+
+
+def piece_events(p, secs):
+    """One timeline for a piece: its discant sections in time, with the stretches between them,
+    before the first and after the last (organal openings and closes) laid out unmeasured.
+    Returns (duplum, tenor) as (event, onset, duration, unmeasured) lists."""
+    D, T = p.voices['D'], p.voices['T']
+    out_d, out_t = [], []
+    t, prev_end = 0, (-1, -1e9)
+    bounds = []
+    for s in secs:
+        keys = [_key(e) for e in s.D + s.T]
+        bounds.append((min(keys), max(keys), s))
+    bounds.sort(key=lambda b: b[0])
+    for i, (k0, k1, s) in enumerate(bounds + [((1e9, 0), None, None)]):
+        gd = [e for e in D if prev_end < _key(e) < k0 and e.pitch is not None]
+        gt = [e for e in T if prev_end < _key(e) < k0 and e.pitch is not None]
+        if gd or gt:
+            dl, tl, t = _layout_gap(gd, gt, t)
+            out_d += [(e, o, d, True) for e, o, d in dl]
+            out_t += [(e, o, d, True) for e, o, d in tl]
+        if s is None:
+            break
+        t0 = t + max(0, -s.offset)
+        for voice, start, out in ((s.D, t0 + s.offset, out_d), (s.T, t0, out_t)):
+            tt = start
+            for e in voice:
+                if e.pitch is not None:
+                    out.append((e, tt, e.dur, False))
+                tt += e.dur
+            t = max(t, tt)
+        t += (-t) % BAR
+        prev_end = k1
+    return out_d, out_t
+
+
+def _extend_elongations(ev, voice):
+    """An elongated note (Payne's red rectangle) followed by a rest takes the rest's value."""
+    if ELONGATIONS != 'extend':
+        return ev, []
+    out, done = [], []
+    ev = sorted(ev, key=lambda x: x[1])
+    for i, (e, o, d, um) in enumerate(ev):
+        if e.elong and not um:
+            nxt = ev[i + 1][1] if i + 1 < len(ev) else None
+            gap = (nxt - (o + d)) if nxt is not None else 0
+            if gap > 0:
+                done.append((voice, o, d, d + gap))
+                d = d + gap
+        out.append((e, o, d, um))
+    return out, done
+
+
 def write_sections(pieces, out):
-    """MusicXML (duplum, tenor; 3/8) for every section whose staves agree in time, plus index.json"""
+    """MusicXML (duplum, tenor; 3/8) per piece: its discant sections, if both staves agree in
+    time in each, with the unmeasured stretches between and around them laid out (flagged in
+    unmeasured.json); plus index.json, ficta.json and elongations.json"""
     import json
     from pathlib import Path
     from ligature_rhythm.musicxml import write
     from ligature_rhythm.realise import Event
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
-    meta, ficta = {}, {}
+    meta, ficta, unmeasured, elongs = {}, {}, {}, {}
     for p in pieces:
         secs = sections(p)
-        for s in secs:
-            if not (s.agree == s.pairs and s.order_bad == 0):
-                continue
-            name = f'F5_{p.no:03d}{p.variant}{"abcdefgh"[s.k] if len(secs) > 1 else ""}'
+        good = [s for s in secs if s.agree == s.pairs and s.order_bad == 0]
+        if not good:
+            continue
+        name = f'F5_{p.no:03d}{p.variant}'
+        if len(good) < len(secs):
+            # a section whose staves disagree: keep the good ones as separate files, as before
+            groups = [(f'{name}{"abcdefgh"[s.k]}', [s]) for s in good]
+        else:
+            groups = [(name, good)]
+        for nm, ss in groups:
+            dl, tl = piece_events(p, ss) if len(groups) == 1 else piece_events(p, ss)
+            dl, ed = _extend_elongations(dl, 'duplum')
+            tl, et = _extend_elongations(tl, 'tenor')
+            if ed or et:
+                elongs[nm] = [dict(voice=v, measure=o // BAR + 1, value=d0, extended_to=d1)
+                              for v, o, d0, d1 in ed + et]
 
-            def evs(voice, start, vname):
-                t, r = start, []
-                for e in voice:
-                    if e.pitch is not None:
-                        r.append(Event(t, e.dur, e.pitch, None, e.small))
-                        if e.ficta:          # bar of 3/8 = 6 sixteenths
-                            step, alt, octv = e.pitch
-                            ficta.setdefault(name, []).append(dict(
-                                voice=vname, measure=t // 6 + 1, pitch=f'{step}{"-" * (alt < 0)}{"#" * (alt > 0)}{octv}',
-                                alter=alt, kind=e.ficta))
-                    t += e.dur
+            def events(lst, vname):
+                r, um = [], []
+                for e, o, d, u in sorted(lst, key=lambda x: x[1]):
+                    r.append(Event(o, d, e.pitch, None, e.small))
+                    if u:
+                        um += list(range(o // BAR + 1, (o + max(d, 1) - 1) // BAR + 2))
+                    if e.ficta:
+                        step, alt, octv = e.pitch
+                        ficta.setdefault(nm, []).append(dict(
+                            voice=vname, measure=o // BAR + 1,
+                            pitch=f'{step}{"-" * (alt < 0)}{"#" * (alt > 0)}{octv}',
+                            alter=alt, kind=e.ficta))
+                if um:
+                    spans, a0 = [], None
+                    for m in sorted(set(um)):
+                        if not spans or m > spans[-1][1] + 1:
+                            spans.append([m, m])
+                        else:
+                            spans[-1][1] = m
+                    unmeasured.setdefault(nm, {})[vname] = spans
                 return r
-            t0 = max(0, -s.offset)
-            D, T = evs(s.D, s.offset + t0, 'duplum'), evs(s.T, t0, 'tenor')
-            write(out / f'{name}.xml', D, T,
+            D, T = events(dl, 'duplum'), events(tl, 'tenor')
+            write(out / f'{nm}.xml', D, T,
                   title=f'{p.no}. F {p.folio} {p.system}: {p.title.split("[")[0].strip()}',
                   subtitle='from T. B. Payne, F fasc. 5 (DIAMM 2026)')
-            meta[name] = dict(no=p.no, variant=p.variant, section=s.k, folio=p.folio, system=p.system, sub=p.sub,
-                              title=p.title, page=p.page, nD=len(D), nT=len(T), pairs_checked=s.pairs)
+            meta[nm] = dict(no=p.no, variant=p.variant, sections=[s.k for s in ss], folio=p.folio,
+                            system=p.system, sub=p.sub, title=p.title, page=p.page, nD=len(D),
+                            nT=len(T), pairs_checked=sum(s.pairs for s in ss),
+                            unmeasured=bool(unmeasured.get(nm)))
     (out / 'index.json').write_text(json.dumps(meta, indent=1))
-    # where Payne's red apparatus set an accidental (signature, ficta), per section
     (out / 'ficta.json').write_text(json.dumps(ficta, indent=1))
+    # measures laid out without Payne's rhythm (organal openings and closes, passages between
+    # discant sections): duplum notes a breve each, tenor notes aligned by position on the page
+    (out / 'unmeasured.json').write_text(json.dumps(unmeasured, indent=1))
+    # elongated notes (red rectangles) that took the following rest's value
+    (out / 'elongations.json').write_text(json.dumps(elongs, indent=1))
     return meta
 
 
@@ -536,11 +652,15 @@ if __name__ == '__main__':
     ap.add_argument('pdf')
     ap.add_argument('--out', default='editions_payne')
     ap.add_argument('--workers', type=int)
+    ap.add_argument('--elongations', choices=['extend', 'payne'], default='extend',
+                    help="notes under Payne's red rectangles (elongated in F) followed by a rest: "
+                         "extend through the rest (default) or keep Payne's values")
     ap.add_argument('--ficta', choices=['all', 'source', 'none'], default='all',
                     help="Payne's red accidentals and ficta: all (default), source (no bracketed "
                          "editorial ficta), none")
     a = ap.parse_args()
     ps = read(a.pdf, workers=a.workers, ficta=a.ficta)
+    ELONGATIONS = a.elongations
     meta = write_sections(ps, a.out)
     n = sum(len(sections(p)) for p in ps)
     print(f'{len(ps)} pieces, {n} measured sections, {len(meta)} written (staves agree note for note)')

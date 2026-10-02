@@ -450,7 +450,9 @@ def sections(piece, min_t=3, min_d=6):
         start = _key(trun[0])
         # the duplum may start a little before the tenor's first event only via x-coincidence
         dsel = [e for e in D if start[0] < e.sys or (start[0] == e.sys and e.x >= start[1] - 0.8)]
-        dsel = [e for e in dsel if _key(e) < end]
+        # stop the duplum before the tenor's first unmeasured note, including a duplum note
+        # printed in the same column (it sounds with that tenor note, in the unmeasured stretch)
+        dsel = [e for e in dsel if _key(e) < (end[0], end[1] - 0.8)]
         # stop both voices at the first unmeasured duplum note
         for i, e in enumerate(dsel):
             if not e.measured:
@@ -507,6 +509,9 @@ def _layout_gap(D, T, t0):
     tenor note. Returns duplum and tenor (event, onset, duration) lists and the end time."""
     dl, t = [], t0
     for e in D:
+        if e.pitch is None:          # a measured rest inside the stretch: time, no note
+            t += e.dur
+            continue
         d = e.dur if e.measured and e.dur else UNMEASURED_STEP
         dl.append((e, t, d))
         t += d
@@ -539,8 +544,20 @@ def piece_events(p, secs):
         bounds.append((min(keys), max(keys), s))
     bounds.sort(key=lambda b: b[0])
     for i, (k0, k1, s) in enumerate(bounds + [((1e9, 0), None, None)]):
-        gd = [e for e in D if prev_end < _key(e) < k0 and e.pitch is not None]
+        gd = [e for e in D if prev_end < _key(e) < k0 and (e.pitch is not None or e.measured)]
+        # measured duplum rests: those after the last discant note count as time before the
+        # stretch (then round to the bar); those inside it count as time; trailing ones are
+        # covered by the bar rounding
+        lead = 0
+        while gd and gd[0].pitch is None:
+            lead += gd[0].dur
+            gd = gd[1:]
+        while gd and gd[-1].pitch is None:
+            gd = gd[:-1]
         gt = [e for e in T if prev_end < _key(e) < k0 and e.pitch is not None]
+        if gd or gt:
+            t += lead if prev_end[0] >= 0 else 0
+        t += (-t) % BAR
         if gd or gt:
             dl, tl, t = _layout_gap(gd, gt, t)
             out_d += [(e, o, d, True) for e, o, d in dl]
@@ -555,7 +572,6 @@ def piece_events(p, secs):
                     out.append((e, tt, e.dur, False))
                 tt += e.dur
             t = max(t, tt)
-        t += (-t) % BAR
         prev_end = k1
     return out_d, out_t
 

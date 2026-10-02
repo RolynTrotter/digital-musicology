@@ -37,6 +37,9 @@ STEPS = 'CDEFGAB'
 # bottom staff line as (step index, octave) for each clef glyph
 CLEF_BOTTOM = {'V': (2, 3), '&': (2, 4), '?': (4, 2)}
 HEADER = re.compile(r'^(\d+)\.\s+F, f\.\s*(\d+[rv]),\s*([IVX]+)(?:,\s*(\d+))?:\s*(.*)$')
+# Payne's alternative readings, printed after a piece: "(Alternative reading of no. 172 in mode 3)",
+# "(First alternative reading of no. 445)". They are separate versions, not more of the piece.
+ALT_HEADER = re.compile(r'^\((?:(First|Second|Third)\s+)?[Aa]lternative reading of no\.\s*(\d+)([^)]*)\)')
 
 
 def _red(c) -> bool:
@@ -87,6 +90,7 @@ class Piece:
     voices: dict = field(default_factory=lambda: {'D': [], 'T': []})
     warnings: list = field(default_factory=list)
     nsys: int = 0
+    variant: str = ''              # '' for Payne's main text; 'alt', 'alt2' … for his alternatives
 
 
 # --------------------------------------------------------------------------- page geometry
@@ -138,6 +142,13 @@ def headers_of(page, pno):
         if m:
             out.append(dict(no=int(m.group(1)), folio=m.group(2), system=m.group(3), sub=m.group(4),
                             title=m.group(5), page=pno, top=ln['top']))
+            continue
+        a = ALT_HEADER.match(ln['text'].strip())
+        if a:
+            k = {'First': 1, 'Second': 2, 'Third': 3}.get(a.group(1), 1)
+            out.append(dict(no=int(a.group(2)), folio=None, system=None, sub=None,
+                            title=f'Alternative reading{a.group(3)}', page=pno, top=ln['top'],
+                            variant='alt' if k == 1 else f'alt{k}'))
     return out
 
 
@@ -379,7 +390,15 @@ def read(pdf_path, pages=None, workers=None, ficta='all'):
     for items in results:
         for kind, top, obj in items:
             if kind == 'h':
-                cur = Piece(obj['no'], obj['folio'], obj['system'], obj['sub'], obj['title'], obj['page'])
+                if obj.get('variant'):
+                    main = next((p for p in reversed(pieces) if p.no == obj['no'] and not p.variant), None)
+                    cur = Piece(obj['no'], main.folio if main else '', main.system if main else '',
+                                main.sub if main else None,
+                                (main.title if main else '') + f" [{obj['title']}]", obj['page'],
+                                variant=obj['variant'])
+                else:
+                    cur = Piece(obj['no'], obj['folio'], obj['system'], obj['sub'], obj['title'],
+                                obj['page'])
                 pieces.append(cur)
             elif cur is not None:
                 for v in 'DT':
@@ -484,7 +503,7 @@ def write_sections(pieces, out):
         for s in secs:
             if not (s.agree == s.pairs and s.order_bad == 0):
                 continue
-            name = f'F5_{p.no:03d}{"abcdefgh"[s.k] if len(secs) > 1 else ""}'
+            name = f'F5_{p.no:03d}{p.variant}{"abcdefgh"[s.k] if len(secs) > 1 else ""}'
 
             def evs(voice, start, vname):
                 t, r = start, []
@@ -503,7 +522,7 @@ def write_sections(pieces, out):
             write(out / f'{name}.xml', D, T,
                   title=f'{p.no}. F {p.folio} {p.system}: {p.title.split("[")[0].strip()}',
                   subtitle='from T. B. Payne, F fasc. 5 (DIAMM 2026)')
-            meta[name] = dict(no=p.no, section=s.k, folio=p.folio, system=p.system, sub=p.sub,
+            meta[name] = dict(no=p.no, variant=p.variant, section=s.k, folio=p.folio, system=p.system, sub=p.sub,
                               title=p.title, page=p.page, nD=len(D), nT=len(T), pairs_checked=s.pairs)
     (out / 'index.json').write_text(json.dumps(meta, indent=1))
     # where Payne's red apparatus set an accidental (signature, ficta), per section

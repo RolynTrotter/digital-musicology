@@ -275,8 +275,10 @@ def annotate_mei(mei_root, graph: Graph, voice_pitches, qstamps: dict | None = N
         el.set('lform', 'solid')
         el.set('color', br.get('color', graph.colors['bracket']))
         rend = etree.SubElement(el, _q('rend'))
-        rend.set('fontstyle', 'normal')
-        rend.set('fontweight', 'bold')
+        rend.set('fontstyle', br.get('fontstyle', 'normal'))
+        rend.set('fontweight', 'bold' if br.get('bold', True) else 'normal')
+        if br.get('size'):
+            rend.set('fontsize', br['size'])
         rend.text = br.get('text', '')
 
     if graph.title:
